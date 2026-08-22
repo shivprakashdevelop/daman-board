@@ -138,9 +138,11 @@ function ListingCard({card,featured,onTakeSpot}){
     <div className="listing-main">
       <div className="listing-title-row"><div><h4>{card.name}</h4><span className="category">{card.category}</span></div><strong className="bid">₹{formatINR(card.amount)}</strong></div>
       <p>{card.desc}</p>
-      <div className="meta"><span>{card.clicks} clicks</span><span>•</span><span>{card.time}</span></div>
+      <div className="listing-footer">
+        <div className="meta"><span className="click-badge"><MousePointerClick size={18}/>{card.clicks} clicks</span><span>{card.time}</span></div>
+        <button className="take-spot" onClick={onTakeSpot}>Take this spot <ArrowUpRight size={17}/></button>
+      </div>
     </div>
-    <button className="take-spot" onClick={onTakeSpot}>Take this spot <ArrowUpRight size={15}/></button>
   </article>
 }
 
