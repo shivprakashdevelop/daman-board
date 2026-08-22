@@ -15,7 +15,7 @@ npm run dev
 npm run build
 ```
 
-## Current prototype features
+## Current foundation
 
 - Board / Stats / About / Rules navigation
 - Live viewers + views pill
@@ -25,7 +25,11 @@ npm run build
 - Top 3 + Top 10 local listings
 - Responsive mobile-first design
 - Daman-specific branding and sample data
+- Category filters and live listing count
+- Claim validation state with a clear moderation hand-off
+- Live Stats, About and Rules content surfaces
+- Data shape ready to swap from sample data to Supabase rows
 
 ## Next production steps
 
-Connect Supabase/Postgres, authentication, moderation, Razorpay payments, actual bid ordering, analytics/click tracking, admin dashboard, listing verification, abuse prevention, and deployment.
+Connect Supabase/Postgres, authentication, moderation, Razorpay payments, actual bid ordering, analytics/click tracking, admin dashboard, listing verification, abuse prevention, and deployment. Keep payment creation and webhook verification server-side; never place Razorpay secrets in the client.
