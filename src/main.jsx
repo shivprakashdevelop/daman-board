@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Link2, Minus, Plus, Flame, Store, CalendarDays, Camera, Wrench, Sparkles, ArrowUpRight, ShieldCheck, Eye, MousePointerClick, MapPin, ChevronUp, Heart, Clock, TrendingUp, CheckCircle2, BarChart3 } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Link01Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ArrowUpRight01Icon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
 import './styles.css';
+
+function AppIcon({icon,size=24,...props}){
+  return <HugeiconsIcon icon={icon} size={size} color="currentColor" strokeWidth={1.8} {...props}/>;
+}
 
 // This shape intentionally mirrors the future Supabase `listings` table.
 // Keeping the UI data-normalized makes the prototype easy to replace with a query.
@@ -86,14 +91,14 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
       <p className="hero-copy"><strong>Spots start at ₹49.</strong> Bid under the #1 price and you still land on the board — exactly where your amount ranks.</p>
 
       <div className="amount-row">
-        <button onClick={()=>setAmount(Math.max(49, amount-50))} aria-label="Decrease bid by ₹50"><Minus size={34}/></button>
+        <button onClick={()=>setAmount(Math.max(49, amount-50))} aria-label="Decrease bid by ₹50"><AppIcon icon={MinusSignIcon} size={34}/></button>
         <div className="amount">₹{formatINR(amount)}</div>
-        <button onClick={()=>setAmount(amount+50)} aria-label="Increase bid by ₹50"><Plus size={34}/></button>
+        <button onClick={()=>setAmount(amount+50)} aria-label="Increase bid by ₹50"><AppIcon icon={PlusSignIcon} size={34}/></button>
       </div>
       <div className="rank-preview">Estimated position: <strong>#{position || 1}</strong></div>
 
       <div id="claim-form" className={`claim-bar ${claimed ? 'is-success' : ''}`}>
-        <Link2 size={24}/>
+        <AppIcon icon={Link01Icon} size={24}/>
         <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false)}} placeholder="Instagram, website or WhatsApp link…"/>
         <button onClick={submitClaim} disabled={!link.trim()}>{claimed ? 'Request received ✓' : 'Claim spot'}</button>
       </div>
@@ -101,20 +106,20 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
     </section>
 
     <section className="utility-panels" aria-label="Board activity">
-      <UtilityPanel title="Spotlight" icon={<Heart size={16}/>} summary="Local picks" value="3 spots" open={openPanel === 'spotlight'} onClick={() => setOpenPanel(openPanel === 'spotlight' ? null : 'spotlight')}>
+      <UtilityPanel title="Spotlight" icon={<AppIcon icon={HeartAddIcon} size={16}/>} summary="Local picks" value="3 spots" open={openPanel === 'spotlight'} onClick={() => setOpenPanel(openPanel === 'spotlight' ? null : 'spotlight')}>
         <div className="utility-rows">{sponsorRows.map((sponsor) => <div className="utility-row" key={sponsor.name}><span className="utility-rank">#{sponsor.rank}</span><span className="mini-avatar">{sponsor.icon}</span><strong>{sponsor.name}</strong><b>₹{formatINR(sponsor.amount)}</b></div>)}</div>
         <div className="utility-form"><input aria-label="Spotlight name" placeholder="Your name or page"/><input className="mini-amount" aria-label="Spotlight amount" inputMode="numeric" value={sponsorAmount} onChange={(event) => setSponsorAmount(Math.max(199, Number(event.target.value) || 199))}/><button onClick={() => setSponsored(true)}>{sponsored ? 'Queued ✓' : 'Spotlight'}</button></div>
         <p className="utility-note">From ₹199. The highest amount gets the top local spotlight.</p>
       </UtilityPanel>
-      <UtilityPanel title="Recent bids" icon={<Clock size={16}/>} summary={`${recentBids.length} bids`} value="Live" open={openPanel === 'recent'} onClick={() => setOpenPanel(openPanel === 'recent' ? null : 'recent')}>
+      <UtilityPanel title="Recent bids" icon={<AppIcon icon={Time04Icon} size={16}/>} summary={`${recentBids.length} bids`} value="Live" open={openPanel === 'recent'} onClick={() => setOpenPanel(openPanel === 'recent' ? null : 'recent')}>
         <div className="utility-rows">{recentBids.map((bid) => <div className="utility-row recent-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><strong>{bid.name}</strong><span className="recent-action">{bid.action}</span><b>₹{formatINR(bid.amount)}</b><small>{bid.time}</small></div>)}</div>
       </UtilityPanel>
     </section>
 
     <section className="board-section">
       <div className="section-heading">
-        <div><span className="eyebrow"><Flame size={16}/> LIVE BOARD</span><h2>Daman's front page</h2></div>
-        <div className="category-icons" aria-hidden="true"><Store/><CalendarDays/><Camera/><Wrench/><Sparkles/></div>
+        <div><span className="eyebrow"><AppIcon icon={FireIcon} size={16}/> LIVE BOARD</span><h2>Daman's front page</h2></div>
+        <div className="category-icons" aria-hidden="true"><AppIcon icon={Store01Icon}/><AppIcon icon={Calendar03Icon}/><AppIcon icon={Camera01Icon}/><AppIcon icon={ToolsIcon}/><AppIcon icon={SparklesIcon}/></div>
       </div>
       <div className="board-toolbar">
         <div className="filter-row" aria-label="Filter listings by category">
@@ -132,7 +137,7 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
 }
 
 function UtilityPanel({title,icon,summary,value,open,onClick,children}){
-  return <div className={`utility-panel ${open ? 'is-open' : ''}`}><button className="utility-toggle" aria-expanded={open} onClick={onClick}><span className="utility-title">{icon}<strong>{title}</strong></span><span className="utility-summary">{summary}</span><b>{value}</b><ChevronUp size={16} className="utility-chevron" /></button>{open && <div className="utility-content">{children}</div>}</div>
+  return <div className={`utility-panel ${open ? 'is-open' : ''}`}><button className="utility-toggle" aria-expanded={open} onClick={onClick}><span className="utility-title">{icon}<strong>{title}</strong></span><span className="utility-summary">{summary}</span><b>{value}</b><AppIcon icon={ArrowUp01Icon} size={16} className="utility-chevron" /></button>{open && <div className="utility-content">{children}</div>}</div>
 }
 
 function GroupSeparator({label}){
@@ -147,15 +152,15 @@ function ListingCard({card,featured,onTakeSpot}){
       <div className="listing-title-row"><div><h4>{card.name}</h4><span className="category">{card.category}</span></div><strong className="bid">₹{formatINR(card.amount)}</strong></div>
       <p>{card.desc}</p>
       <div className="listing-footer">
-        <div className="meta"><span className="click-badge"><MousePointerClick size={18}/>{card.clicks} clicks</span><span>{card.time}</span></div>
-        <button className="take-spot" onClick={onTakeSpot}>Take this spot <ArrowUpRight size={17}/></button>
+        <div className="meta"><span className="click-badge"><AppIcon icon={Cursor01Icon} size={18}/>{card.clicks} clicks</span><span>{card.time}</span></div>
+        <button className="take-spot" onClick={onTakeSpot}>Take this spot <AppIcon icon={ArrowUpRight01Icon} size={17}/></button>
       </div>
     </div>
   </article>
 }
 
 function Stats(){
-  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<Eye/>} value="12,420" label="board views · 24h" /><Stat icon={<MousePointerClick/>} value="1,904" label="listing clicks · 24h" /><Stat icon={<MapPin/>} value="12" label="live spots" /><Stat icon={<TrendingUp/>} value="₹2,264" label="standing bids" /><Stat icon={<BarChart3/>} value="42" label="bids this week" /><Stat icon={<Heart/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{listings.slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{recentBids.map((bid) => <div className="recent-stat-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><ShieldCheck size={20}/><span>Stats are currently sample data. Anonymous analytics will be connected once listings have real IDs and click events.</span></div></main>
+  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="board views · 24h" /><Stat icon={<AppIcon icon={Cursor01Icon}/>} value="1,904" label="listing clicks · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value="12" label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value="₹2,264" label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value="42" label="bids this week" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{listings.slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{recentBids.map((bid) => <div className="recent-stat-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Stats are currently sample data. Anonymous analytics will be connected once listings have real IDs and click events.</span></div></main>
 }
 
 function Stat({icon,value,label}){ return <div className="stat-card">{icon}<strong>{value}</strong><span>{label}</span></div> }
@@ -166,11 +171,11 @@ function MiniChart(){
 }
 
 function AboutPage(){
-  return <main className="simple-page info-page"><span className="eyebrow">ABOUT MADE IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Made in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>12</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><CheckCircle2 size={20}/><span>Made in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
+  return <main className="simple-page info-page"><span className="eyebrow">ABOUT MADE IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Made in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>12</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><AppIcon icon={CheckmarkCircle02Icon} size={20}/><span>Made in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
 }
 
 function RulesPage(){
-  return <main className="simple-page info-page rules-page"><span className="eyebrow">KEEP IT LOCAL</span><h1>Good boards need<br/><em>good neighbours.</em></h1><p>Made in Daman is one public board for local businesses, creators, events, services and community projects. Your spot is decided by one number: your bid.</p><RuleSection title="Ranking" items={['Spots start at ₹49 and move in ₹50 steps in this prototype.', 'Bid under #1 and you still land on the board wherever your amount ranks.', 'Existing listings keep their amount until the owner raises it or someone passes them.', 'If two listings hold the same amount, the newer bid ranks ahead.']} /><RuleSection title="What can be listed" items={['A genuine local business, event, creator, service, project or discovery in Daman.', 'Use a working Instagram, website or WhatsApp link that helps people understand the listing.', 'Listings must be useful, accurate and appropriate for a public local board.']} /><RuleSection title="After you claim" items={['Your request is reviewed before it goes live on the board.', 'Every click can eventually be counted through a tracked redirect.', 'Bids are not a guarantee of permanent placement—being passed is part of the board.']} /><RuleSection title="Payments & disputes" items={['Checkout will be handled by a server-side payment flow once Razorpay is connected.', 'Never share payment secrets in the browser or client-side code.', 'For a duplicate charge or missing listing, contact support before opening a dispute.']} /><div className="info-note"><ShieldCheck size={20}/><span>These are product rules for the current foundation and will be reviewed before public launch.</span></div></main>
+  return <main className="simple-page info-page rules-page"><span className="eyebrow">KEEP IT LOCAL</span><h1>Good boards need<br/><em>good neighbours.</em></h1><p>Made in Daman is one public board for local businesses, creators, events, services and community projects. Your spot is decided by one number: your bid.</p><RuleSection title="Ranking" items={['Spots start at ₹49 and move in ₹50 steps in this prototype.', 'Bid under #1 and you still land on the board wherever your amount ranks.', 'Existing listings keep their amount until the owner raises it or someone passes them.', 'If two listings hold the same amount, the newer bid ranks ahead.']} /><RuleSection title="What can be listed" items={['A genuine local business, event, creator, service, project or discovery in Daman.', 'Use a working Instagram, website or WhatsApp link that helps people understand the listing.', 'Listings must be useful, accurate and appropriate for a public local board.']} /><RuleSection title="After you claim" items={['Your request is reviewed before it goes live on the board.', 'Every click can eventually be counted through a tracked redirect.', 'Bids are not a guarantee of permanent placement—being passed is part of the board.']} /><RuleSection title="Payments & disputes" items={['Checkout will be handled by a server-side payment flow once Razorpay is connected.', 'Never share payment secrets in the browser or client-side code.', 'For a duplicate charge or missing listing, contact support before opening a dispute.']} /><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>These are product rules for the current foundation and will be reviewed before public launch.</span></div></main>
 }
 
 function RuleSection({title,items}){ return <section className="rule-section"><h2>{title}</h2><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section> }
