@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Link01Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ArrowUpRight01Icon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
+import { Link01Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
+import logoUrl from './assets/logo.png';
 import './styles.css';
 
 function AppIcon({icon,size=24,...props}){
@@ -29,7 +30,7 @@ const formatINR = (value) => new Intl.NumberFormat('en-IN').format(value);
 const sponsorRows = [
   { rank: 1, name: 'Coastal Creators Club', amount: 799, icon: '🌊' },
   { rank: 2, name: 'Nani Daman Market', amount: 649, icon: '🛍️' },
-  { rank: 3, name: '@madeindaman', amount: 499, icon: '📍' }
+  { rank: 3, name: '@bestindaman', amount: 499, icon: '📍' }
 ];
 const recentBids = [
   { name: 'Sea View Café', action: 'moved to #1', amount: 499, time: '12 min ago', icon: '☕' },
@@ -59,8 +60,8 @@ function App(){
 
   return <div className="app-shell">
     <header className="topbar">
-      <button className="brand" onClick={()=>setTab('Board')} aria-label="Made in Daman home">
-        <span>Made in</span><strong>Daman</strong><small>®</small>
+      <button className="brand" onClick={()=>setTab('Board')} aria-label="Best in Daman home">
+        <img src={logoUrl} alt="Best in Daman #1" />
       </button>
       <nav>
         {['Board','Stats','About','Rules'].map(item => <button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}
@@ -145,17 +146,26 @@ function GroupSeparator({label}){
 }
 
 function ListingCard({card,featured,onTakeSpot}){
+  const footer = (
+    <div className="listing-footer">
+      <span className="click-badge"><AppIcon icon={Cursor01Icon} size={featured?20:16}/>{card.clicks} clicks</span>
+      <span className="listing-time">{card.time}</span>
+      <button className="take-spot" onClick={onTakeSpot}>Take this spot</button>
+    </div>
+  );
   return <article className={`listing ${featured?'featured':''}`}>
-    <div className="rank">#{card.rank}</div>
-    <div className="avatar">{card.icon}</div>
-    <div className="listing-main">
-      <div className="listing-title-row"><div><h4>{card.name}</h4><span className="category">{card.category}</span></div><strong className="bid">₹{formatINR(card.amount)}</strong></div>
-      <p>{card.desc}</p>
-      <div className="listing-footer">
-        <div className="meta"><span className="click-badge"><AppIcon icon={Cursor01Icon} size={18}/>{card.clicks} clicks</span><span>{card.time}</span></div>
-        <button className="take-spot" onClick={onTakeSpot}>Take this spot <AppIcon icon={ArrowUpRight01Icon} size={17}/></button>
+    <div className="listing-row">
+      <div className="rank-icon">
+        <span className="rank">#{card.rank}</span>
+        <div className="avatar">{card.icon}</div>
+      </div>
+      <div className="listing-content">
+        <div className="listing-title-row"><h4>{card.name}</h4><strong className="bid">₹{formatINR(card.amount)}</strong></div>
+        <p>{card.desc}</p>
+        {!featured && footer}
       </div>
     </div>
+    {featured && footer}
   </article>
 }
 
@@ -171,17 +181,17 @@ function MiniChart(){
 }
 
 function AboutPage(){
-  return <main className="simple-page info-page"><span className="eyebrow">ABOUT MADE IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Made in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>12</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><AppIcon icon={CheckmarkCircle02Icon} size={20}/><span>Made in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
+  return <main className="simple-page info-page"><span className="eyebrow">ABOUT BEST IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Best in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>12</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><AppIcon icon={CheckmarkCircle02Icon} size={20}/><span>Best in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
 }
 
 function RulesPage(){
-  return <main className="simple-page info-page rules-page"><span className="eyebrow">KEEP IT LOCAL</span><h1>Good boards need<br/><em>good neighbours.</em></h1><p>Made in Daman is one public board for local businesses, creators, events, services and community projects. Your spot is decided by one number: your bid.</p><RuleSection title="Ranking" items={['Spots start at ₹49 and move in ₹50 steps in this prototype.', 'Bid under #1 and you still land on the board wherever your amount ranks.', 'Existing listings keep their amount until the owner raises it or someone passes them.', 'If two listings hold the same amount, the newer bid ranks ahead.']} /><RuleSection title="What can be listed" items={['A genuine local business, event, creator, service, project or discovery in Daman.', 'Use a working Instagram, website or WhatsApp link that helps people understand the listing.', 'Listings must be useful, accurate and appropriate for a public local board.']} /><RuleSection title="After you claim" items={['Your request is reviewed before it goes live on the board.', 'Every click can eventually be counted through a tracked redirect.', 'Bids are not a guarantee of permanent placement—being passed is part of the board.']} /><RuleSection title="Payments & disputes" items={['Checkout will be handled by a server-side payment flow once Razorpay is connected.', 'Never share payment secrets in the browser or client-side code.', 'For a duplicate charge or missing listing, contact support before opening a dispute.']} /><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>These are product rules for the current foundation and will be reviewed before public launch.</span></div></main>
+  return <main className="simple-page info-page rules-page"><span className="eyebrow">KEEP IT LOCAL</span><h1>Good boards need<br/><em>good neighbours.</em></h1><p>Best in Daman is one public board for local businesses, creators, events, services and community projects. Your spot is decided by one number: your bid.</p><RuleSection title="Ranking" items={['Spots start at ₹49 and move in ₹50 steps in this prototype.', 'Bid under #1 and you still land on the board wherever your amount ranks.', 'Existing listings keep their amount until the owner raises it or someone passes them.', 'If two listings hold the same amount, the newer bid ranks ahead.']} /><RuleSection title="What can be listed" items={['A genuine local business, event, creator, service, project or discovery in Daman.', 'Use a working Instagram, website or WhatsApp link that helps people understand the listing.', 'Listings must be useful, accurate and appropriate for a public local board.']} /><RuleSection title="After you claim" items={['Your request is reviewed before it goes live on the board.', 'Every click can eventually be counted through a tracked redirect.', 'Bids are not a guarantee of permanent placement—being passed is part of the board.']} /><RuleSection title="Payments & disputes" items={['Checkout will be handled by a server-side payment flow once Razorpay is connected.', 'Never share payment secrets in the browser or client-side code.', 'For a duplicate charge or missing listing, contact support before opening a dispute.']} /><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>These are product rules for the current foundation and will be reviewed before public launch.</span></div></main>
 }
 
 function RuleSection({title,items}){ return <section className="rule-section"><h2>{title}</h2><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section> }
 
 function Footer({setTab}){
-  return <footer className="site-footer"><div><strong>Made in Daman®</strong><span>One local board. Your bid is your spot.</span></div><nav aria-label="Footer"><button onClick={() => setTab('Rules')}>Rules</button><button onClick={() => setTab('About')}>About</button><button onClick={() => setTab('Stats')}>Live stats</button><span>Payments coming soon</span></nav></footer>
+  return <footer className="site-footer"><div><strong>Best in Daman®</strong><span>One local board. Your bid is your spot.</span></div><nav aria-label="Footer"><button onClick={() => setTab('Rules')}>Rules</button><button onClick={() => setTab('About')}>About</button><button onClick={() => setTab('Stats')}>Live stats</button><span>Payments coming soon</span></nav></footer>
 }
 
 function InfoPage({eyebrow,title,text,cards}){
