@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Link01Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
+import { Link01Icon, Globe02Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
 import logoUrl from './assets/logo.png';
 import './styles.css';
 
@@ -56,20 +56,21 @@ function App(){
   const [link, setLink] = useState('');
   const [tab, setTab] = useState('Board');
   const [claimed, setClaimed] = useState(false);
+  const [listingCategory, setListingCategory] = useState('');
   const [boardListings, setBoardListings] = useState(() => readStored(LISTINGS_KEY, listings));
   const [activity, setActivity] = useState(() => readStored(ACTIVITY_KEY, recentBids));
 
   useEffect(() => { window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(boardListings)); }, [boardListings]);
   useEffect(() => { window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity.slice(0, 12))); }, [activity]);
 
-  const submitListing = ({url, bid}) => {
+  const submitListing = ({url, bid, category}) => {
     const normalizedUrl = /^https?:\/\//i.test(url) ? url.trim() : `https://${url.trim()}`;
     let parsedUrl;
     try { parsedUrl = new URL(normalizedUrl); } catch { return false; }
     const existingIndex = boardListings.findIndex((item) => item.url === normalizedUrl);
     const name = listingNameFromLink(normalizedUrl);
     const nextItem = {
-      rank: 0, name, url: normalizedUrl, category: 'Discovery', amount: bid,
+      rank: 0, name, url: normalizedUrl, category: category || 'Discovery', amount: bid,
       desc: `A new local link from ${parsedUrl.hostname.replace(/^www\./, '')}.`, clicks: 0,
       time: 'just now', icon: '📍'
     };
@@ -93,7 +94,7 @@ function App(){
   }, [amount, boardListings]);
 
   const page = {
-    Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} />,
+    Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} />,
     Stats: <Stats listings={boardListings} recentBids={activity} />,
     About: <AboutPage />,
     Rules: <RulesPage />
@@ -113,7 +114,7 @@ function App(){
   </div>
 }
 
-function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, claimed, setClaimed, position, onSubmit}){
+function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit}){
   const [category, setCategory] = useState('All');
   const [openPanel, setOpenPanel] = useState(null);
   const [sponsorAmount, setSponsorAmount] = useState(499);
@@ -127,7 +128,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const rest = visibleListings.slice(10);
   const submitClaim = () => {
     if (!link.trim()) return;
-    const saved = onSubmit({url: link, bid: amount});
+    const saved = onSubmit({url: link, bid: amount, category: listingCategory});
     setClaimed(Boolean(saved));
     setClaimError(saved ? '' : 'Use a valid link and bid at least ₹50 above an existing listing.');
   };
@@ -144,10 +145,25 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
       </div>
       <div className="rank-preview">Estimated position: <strong>#{position || 1}</strong></div>
 
-      <div id="claim-form" className={`claim-bar ${claimed ? 'is-success' : ''}`}>
-        <AppIcon icon={Link01Icon} size={24}/>
-        <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false);setClaimError('')}} placeholder="Instagram, website or WhatsApp link…"/>
-        <button onClick={submitClaim} disabled={!link.trim()}>{claimed ? 'Request received ✓' : 'Claim spot'}</button>
+      <div id="claim-form" className={`claim-form ${claimed ? 'is-success' : ''}`}>
+        <label className="claim-field">
+          <AppIcon icon={Globe02Icon} size={24}/>
+          <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false);setClaimError('')}} placeholder="Your product URL or @handle"/>
+        </label>
+        <label className="claim-field claim-select-field">
+          <select aria-label="Listing category" value={listingCategory} onChange={e=>{setListingCategory(e.target.value);setClaimed(false);setClaimError('')}}>
+            <option value="">Choose a category</option>
+            <option value="Food">Food & drink</option>
+            <option value="Event">Event</option>
+            <option value="Service">Service</option>
+            <option value="Creator">Creator</option>
+            <option value="Business">Business</option>
+            <option value="Community">Community</option>
+            <option value="Discovery">Discovery</option>
+          </select>
+          <AppIcon icon={ArrowUp01Icon} size={22}/>
+        </label>
+        <button className="claim-submit" onClick={submitClaim} disabled={!link.trim() || !listingCategory}>{claimed ? 'Request received ✓' : 'Claim spot'}</button>
       </div>
       <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? 'Nice — your link is ready for review. A real payment step will plug in here.' : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
     </section>
