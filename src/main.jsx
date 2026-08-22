@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Link01Icon, Globe02Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
+import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
 import logoUrl from './assets/logo.png';
 import './styles.css';
 
@@ -122,6 +122,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const [claimError, setClaimError] = useState('');
   const rankedListings = [...boardListings].sort((a, b) => b.amount - a.amount).map((listing, index) => ({...listing, rank: index + 1}));
   const boardCategories = ['All', ...new Set(rankedListings.map((listing) => listing.category))];
+  const categoryIcons = {All: GridViewIcon, Food: OrganicFoodIcon, Event: Calendar03Icon, Service: ToolsIcon, Creator: Camera01Icon, Business: Store01Icon, Community: SparklesIcon, Discovery: Search02Icon};
   const visibleListings = category === 'All' ? rankedListings : rankedListings.filter((listing) => listing.category === category);
   const topThree = visibleListings.slice(0, 3);
   const topTen = visibleListings.slice(3, 10);
@@ -186,7 +187,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
       </div>
       <div className="board-toolbar">
         <div className="filter-row" aria-label="Filter listings by category">
-          {boardCategories.map((item) => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}>{item}</button>)}
+          {boardCategories.map((item) => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}><AppIcon icon={categoryIcons[item] || SparklesIcon} size={20}/><span>{item}</span></button>)}
         </div>
         <span className="board-count">{visibleListings.length} live listings</span>
       </div>
