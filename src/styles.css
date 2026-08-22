@@ -94,3 +94,5 @@ button{cursor:pointer}
 .listing:not(.featured) .take-spot{padding:5px 12px;font-size:13px}
 }
 @media(max-width:700px){.group-separator{gap:10px;margin:32px 0 16px}.group-separator strong{font-size:18px;padding:6px 12px}}
+/* Inline validation keeps the claim flow clear without interrupting the board. */
+.claim-error{color:#b34e4e}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link01Icon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
@@ -39,21 +39,62 @@ const recentBids = [
   { name: 'QuickFix Electrician', action: 'joined the board', amount: 299, time: '1 hr ago', icon: '⚡' },
   { name: 'Home Oven by Riya', action: 'joined the board', amount: 249, time: '2 hrs ago', icon: '🧁' }
 ];
+const LISTINGS_KEY = 'best-in-daman:listings:v1';
+const ACTIVITY_KEY = 'best-in-daman:activity:v1';
+function readStored(key, fallback){
+  try { return JSON.parse(window.localStorage.getItem(key)) || fallback; } catch { return fallback; }
+}
+function listingNameFromLink(link){
+  try {
+    const host = new URL(link).hostname.replace(/^www\./, '').split('.')[0];
+    return host.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+  } catch { return 'New Daman listing'; }
+}
 
 function App(){
   const [amount, setAmount] = useState(299);
   const [link, setLink] = useState('');
   const [tab, setTab] = useState('Board');
   const [claimed, setClaimed] = useState(false);
+  const [boardListings, setBoardListings] = useState(() => readStored(LISTINGS_KEY, listings));
+  const [activity, setActivity] = useState(() => readStored(ACTIVITY_KEY, recentBids));
+
+  useEffect(() => { window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(boardListings)); }, [boardListings]);
+  useEffect(() => { window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity.slice(0, 12))); }, [activity]);
+
+  const submitListing = ({url, bid}) => {
+    const normalizedUrl = /^https?:\/\//i.test(url) ? url.trim() : `https://${url.trim()}`;
+    let parsedUrl;
+    try { parsedUrl = new URL(normalizedUrl); } catch { return false; }
+    const existingIndex = boardListings.findIndex((item) => item.url === normalizedUrl);
+    const name = listingNameFromLink(normalizedUrl);
+    const nextItem = {
+      rank: 0, name, url: normalizedUrl, category: 'Discovery', amount: bid,
+      desc: `A new local link from ${parsedUrl.hostname.replace(/^www\./, '')}.`, clicks: 0,
+      time: 'just now', icon: '📍'
+    };
+    if (existingIndex >= 0) {
+      const existing = boardListings[existingIndex];
+      if (bid <= existing.amount) return false;
+      const next = [...boardListings];
+      next[existingIndex] = {...existing, amount: bid, time: 'just now'};
+      setBoardListings(next);
+      setActivity([{name: existing.name, action: 'raised to a new spot', amount: bid, time: 'just now', icon: existing.icon}, ...activity]);
+    } else {
+      setBoardListings([...boardListings, nextItem]);
+      setActivity([{name, action: 'joined the board', amount: bid, time: 'just now', icon: '📍'}, ...activity]);
+    }
+    return true;
+  };
 
   const position = useMemo(() => {
-    const sorted = [...listings, {amount}].sort((a,b)=>b.amount-a.amount);
+    const sorted = [...boardListings, {amount}].sort((a,b)=>b.amount-a.amount);
     return sorted.findIndex(x => x.amount === amount && !x.name) + 1;
-  }, [amount]);
+  }, [amount, boardListings]);
 
   const page = {
-    Board: <Board amount={amount} setAmount={setAmount} link={link} setLink={setLink} claimed={claimed} setClaimed={setClaimed} position={position} />,
-    Stats: <Stats />,
+    Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} />,
+    Stats: <Stats listings={boardListings} recentBids={activity} />,
     About: <AboutPage />,
     Rules: <RulesPage />
   };
@@ -72,18 +113,23 @@ function App(){
   </div>
 }
 
-function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
+function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, claimed, setClaimed, position, onSubmit}){
   const [category, setCategory] = useState('All');
   const [openPanel, setOpenPanel] = useState(null);
   const [sponsorAmount, setSponsorAmount] = useState(499);
   const [sponsored, setSponsored] = useState(false);
-  const visibleListings = category === 'All' ? listings : listings.filter((listing) => listing.category === category);
+  const [claimError, setClaimError] = useState('');
+  const rankedListings = [...boardListings].sort((a, b) => b.amount - a.amount).map((listing, index) => ({...listing, rank: index + 1}));
+  const boardCategories = ['All', ...new Set(rankedListings.map((listing) => listing.category))];
+  const visibleListings = category === 'All' ? rankedListings : rankedListings.filter((listing) => listing.category === category);
   const topThree = visibleListings.slice(0, 3);
   const topTen = visibleListings.slice(3, 10);
   const rest = visibleListings.slice(10);
   const submitClaim = () => {
     if (!link.trim()) return;
-    setClaimed(true);
+    const saved = onSubmit({url: link, bid: amount});
+    setClaimed(Boolean(saved));
+    setClaimError(saved ? '' : 'Use a valid link and bid at least ₹50 above an existing listing.');
   };
   return <main>
     <section className="hero">
@@ -100,10 +146,10 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
 
       <div id="claim-form" className={`claim-bar ${claimed ? 'is-success' : ''}`}>
         <AppIcon icon={Link01Icon} size={24}/>
-        <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false)}} placeholder="Instagram, website or WhatsApp link…"/>
+        <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false);setClaimError('')}} placeholder="Instagram, website or WhatsApp link…"/>
         <button onClick={submitClaim} disabled={!link.trim()}>{claimed ? 'Request received ✓' : 'Claim spot'}</button>
       </div>
-      <p className="microcopy">{claimed ? 'Nice — your link is ready for review. A real payment step will plug in here.' : 'Already listed? Use the same link to move higher — you only pay the difference.'}</p>
+      <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? 'Nice — your link is ready for review. A real payment step will plug in here.' : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
     </section>
 
     <section className="utility-panels" aria-label="Board activity">
@@ -112,8 +158,8 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
         <div className="utility-form"><input aria-label="Spotlight name" placeholder="Your name or page"/><input className="mini-amount" aria-label="Spotlight amount" inputMode="numeric" value={sponsorAmount} onChange={(event) => setSponsorAmount(Math.max(199, Number(event.target.value) || 199))}/><button onClick={() => setSponsored(true)}>{sponsored ? 'Queued ✓' : 'Spotlight'}</button></div>
         <p className="utility-note">From ₹199. The highest amount gets the top local spotlight.</p>
       </UtilityPanel>
-      <UtilityPanel title="Recent bids" icon={<AppIcon icon={Time04Icon} size={16}/>} summary={`${recentBids.length} bids`} value="Live" open={openPanel === 'recent'} onClick={() => setOpenPanel(openPanel === 'recent' ? null : 'recent')}>
-        <div className="utility-rows">{recentBids.map((bid) => <div className="utility-row recent-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><strong>{bid.name}</strong><span className="recent-action">{bid.action}</span><b>₹{formatINR(bid.amount)}</b><small>{bid.time}</small></div>)}</div>
+      <UtilityPanel title="Recent bids" icon={<AppIcon icon={Time04Icon} size={16}/>} summary={`${boardActivity.length} bids`} value="Live" open={openPanel === 'recent'} onClick={() => setOpenPanel(openPanel === 'recent' ? null : 'recent')}>
+        <div className="utility-rows">{boardActivity.slice(0, 5).map((bid, index) => <div className="utility-row recent-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><strong>{bid.name}</strong><span className="recent-action">{bid.action}</span><b>₹{formatINR(bid.amount)}</b><small>{bid.time}</small></div>)}</div>
       </UtilityPanel>
     </section>
 
@@ -124,7 +170,7 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
       </div>
       <div className="board-toolbar">
         <div className="filter-row" aria-label="Filter listings by category">
-          {categories.map((item) => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}>{item}</button>)}
+          {boardCategories.map((item) => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}>{item}</button>)}
         </div>
         <span className="board-count">{visibleListings.length} live listings</span>
       </div>
@@ -169,8 +215,11 @@ function ListingCard({card,featured,onTakeSpot}){
   </article>
 }
 
-function Stats(){
-  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="board views · 24h" /><Stat icon={<AppIcon icon={Cursor01Icon}/>} value="1,904" label="listing clicks · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value="12" label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value="₹2,264" label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value="42" label="bids this week" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{listings.slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{recentBids.map((bid) => <div className="recent-stat-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Stats are currently sample data. Anonymous analytics will be connected once listings have real IDs and click events.</span></div></main>
+function Stats({listings: boardListings, recentBids: boardActivity}){
+  const liveCount = boardListings.length;
+  const standingBids = boardListings.reduce((sum, item) => sum + item.amount, 0);
+  const totalClicks = boardListings.reduce((sum, item) => sum + item.clicks, 0);
+  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="board views · 24h" /><Stat icon={<AppIcon icon={Cursor01Icon}/>} value={formatINR(totalClicks)} label="listing clicks · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value={liveCount} label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value={`₹${formatINR(standingBids)}`} label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value={boardActivity.length} label="recent bids" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{[...boardListings].sort((a,b)=>b.clicks-a.clicks).slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{boardActivity.slice(0,5).map((bid, index) => <div className="recent-stat-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Stats are persisted locally in this MVP. Supabase analytics can replace this store without changing the UI contract.</span></div></main>
 }
 
 function Stat({icon,value,label}){ return <div className="stat-card">{icon}<strong>{value}</strong><span>{label}</span></div> }

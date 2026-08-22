@@ -28,6 +28,8 @@ npm run build
 - Sunghyun Sans display typography paired with Inter UI/body text
 - Category filters and live listing count
 - Claim validation state with a clear moderation hand-off
+- Functional local MVP: submit a new listing, raise an existing bid, and recalculate rank
+- LocalStorage persistence for listings and recent activity across refreshes
 - Expandable Spotlight and Recent bids activity panels
 - Live Stats with metrics, traffic chart, clicked listings, and bid history
 - Rich About and Rules content surfaces with shared footer navigation
