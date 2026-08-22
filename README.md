@@ -25,6 +25,7 @@ npm run build
 - Top 3 + Top 10 local listings
 - Responsive mobile-first design
 - Daman-specific branding and sample data
+- Sunghyun Sans display typography paired with Inter UI/body text
 - Category filters and live listing count
 - Claim validation state with a clear moderation hand-off
 - Live Stats, About and Rules content surfaces
