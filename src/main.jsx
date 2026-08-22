@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
+import { createListingSubmission, fetchApprovedListings, supabaseConfigured } from './lib/supabase';
 import logoUrl from './assets/logo.png';
 import './styles.css';
 
@@ -50,23 +51,52 @@ function listingNameFromLink(link){
     return host.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
   } catch { return 'New Daman listing'; }
 }
+function mapSupabaseListing(item){
+  return {rank: 0, id: item.id, name: item.name, url: item.url, category: item.category, amount: item.current_bid, desc: item.description, clicks: item.clicks || 0, time: 'live', icon: '📍'};
+}
 
 function App(){
   const [amount, setAmount] = useState(299);
   const [link, setLink] = useState('');
+  const [listingName, setListingName] = useState('');
+  const [listingDescription, setListingDescription] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerContact, setOwnerContact] = useState('');
   const [tab, setTab] = useState('Board');
   const [claimed, setClaimed] = useState(false);
   const [listingCategory, setListingCategory] = useState('');
   const [boardListings, setBoardListings] = useState(() => readStored(LISTINGS_KEY, listings));
   const [activity, setActivity] = useState(() => readStored(ACTIVITY_KEY, recentBids));
+  const [dataMode, setDataMode] = useState(supabaseConfigured ? 'connecting' : 'local');
 
   useEffect(() => { window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(boardListings)); }, [boardListings]);
   useEffect(() => { window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity.slice(0, 12))); }, [activity]);
+  useEffect(() => {
+    let active = true;
+    fetchApprovedListings().then(({data, error, mode}) => {
+      if (!active) return;
+      if (!error && mode === 'supabase' && data) setBoardListings(data.map(mapSupabaseListing));
+      setDataMode(error ? 'local' : mode);
+    });
+    return () => { active = false; };
+  }, []);
 
-  const submitListing = ({url, bid, category}) => {
+  const submitListing = async ({url, bid, category}) => {
     const normalizedUrl = /^https?:\/\//i.test(url) ? url.trim() : `https://${url.trim()}`;
     let parsedUrl;
-    try { parsedUrl = new URL(normalizedUrl); } catch { return false; }
+    try { parsedUrl = new URL(normalizedUrl); } catch { return {ok: false, error: 'Use a valid link.'}; }
+    if (!listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()) {
+      return {ok: false, error: 'Add the listing name, description, your name, and contact.'};
+    }
+    if (supabaseConfigured) {
+      const {data, error} = await createListingSubmission({
+        url: normalizedUrl, name: listingName.trim(), category: category || 'Discovery',
+        description: listingDescription.trim(), owner_name: ownerName.trim(), owner_contact: ownerContact.trim(), current_bid: bid
+      });
+      if (error) return {ok: false, error: error.message || 'We could not submit this listing.'};
+      setActivity([{name: data?.name || listingName.trim(), action: 'submitted for review', amount: bid, time: 'just now', icon: '📍'}, ...activity]);
+      return {ok: true, status: 'pending'};
+    }
     const existingIndex = boardListings.findIndex((item) => item.url === normalizedUrl);
     const name = listingNameFromLink(normalizedUrl);
     const nextItem = {
@@ -76,7 +106,7 @@ function App(){
     };
     if (existingIndex >= 0) {
       const existing = boardListings[existingIndex];
-      if (bid <= existing.amount) return false;
+      if (bid <= existing.amount) return {ok: false, error: `Bid at least ₹50 above the current ₹${formatINR(existing.amount)}.`};
       const next = [...boardListings];
       next[existingIndex] = {...existing, amount: bid, time: 'just now'};
       setBoardListings(next);
@@ -85,7 +115,7 @@ function App(){
       setBoardListings([...boardListings, nextItem]);
       setActivity([{name, action: 'joined the board', amount: bid, time: 'just now', icon: '📍'}, ...activity]);
     }
-    return true;
+    return {ok: true, status: 'local'};
   };
 
   const position = useMemo(() => {
@@ -94,7 +124,7 @@ function App(){
   }, [amount, boardListings]);
 
   const page = {
-    Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} />,
+    Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
     Stats: <Stats listings={boardListings} recentBids={activity} />,
     About: <AboutPage />,
     Rules: <RulesPage />
@@ -114,7 +144,7 @@ function App(){
   </div>
 }
 
-function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit}){
+function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, listingName, setListingName, listingDescription, setListingDescription, ownerName, setOwnerName, ownerContact, setOwnerContact, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit, dataMode}){
   const [category, setCategory] = useState('All');
   const [openPanel, setOpenPanel] = useState(null);
   const [sponsorAmount, setSponsorAmount] = useState(499);
@@ -127,11 +157,11 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const topThree = visibleListings.slice(0, 3);
   const topTen = visibleListings.slice(3, 10);
   const rest = visibleListings.slice(10);
-  const submitClaim = () => {
+  const submitClaim = async () => {
     if (!link.trim()) return;
-    const saved = onSubmit({url: link, bid: amount, category: listingCategory});
-    setClaimed(Boolean(saved));
-    setClaimError(saved ? '' : 'Use a valid link and bid at least ₹50 above an existing listing.');
+    const result = await onSubmit({url: link, bid: amount, category: listingCategory});
+    setClaimed(Boolean(result?.ok));
+    setClaimError(result?.ok ? '' : result?.error || 'We could not submit this listing.');
   };
   return <main>
     <section className="hero">
@@ -164,9 +194,15 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
           </select>
           <AppIcon icon={ArrowUp01Icon} size={22}/>
         </label>
-        <button className="claim-submit" onClick={submitClaim} disabled={!link.trim() || !listingCategory}>{claimed ? 'Request received ✓' : 'Claim spot'}</button>
+        <div className="claim-details">
+          <input aria-label="Listing name" value={listingName} onChange={e=>{setListingName(e.target.value);setClaimed(false)}} placeholder="Listing name" />
+          <input aria-label="Your name" value={ownerName} onChange={e=>{setOwnerName(e.target.value);setClaimed(false)}} placeholder="Your name" />
+          <input aria-label="Email or WhatsApp number" value={ownerContact} onChange={e=>{setOwnerContact(e.target.value);setClaimed(false)}} placeholder="Email or WhatsApp number" />
+          <textarea aria-label="Short description" value={listingDescription} onChange={e=>{setListingDescription(e.target.value);setClaimed(false)}} placeholder="Short description of what people will find…" rows="2" />
+        </div>
+        <button className="claim-submit" onClick={submitClaim} disabled={!link.trim() || !listingCategory || !listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()}>{claimed ? 'Request received ✓' : 'Submit for review'}</button>
       </div>
-      <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? 'Nice — your link is ready for review. A real payment step will plug in here.' : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
+      <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? (dataMode === 'supabase' ? 'Submitted for review. It will appear after approval.' : 'Saved to this browser. Connect Supabase to enable moderation.') : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
     </section>
 
     <section className="utility-panels" aria-label="Board activity">
