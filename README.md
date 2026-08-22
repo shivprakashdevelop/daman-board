@@ -28,7 +28,9 @@ npm run build
 - Sunghyun Sans display typography paired with Inter UI/body text
 - Category filters and live listing count
 - Claim validation state with a clear moderation hand-off
-- Live Stats, About and Rules content surfaces
+- Expandable Spotlight and Recent bids activity panels
+- Live Stats with metrics, traffic chart, clicked listings, and bid history
+- Rich About and Rules content surfaces with shared footer navigation
 - Data shape ready to swap from sample data to Supabase rows
 
 ## Next production steps
