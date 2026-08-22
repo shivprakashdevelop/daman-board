@@ -13,7 +13,11 @@ const listings = [
   { rank: 5, name: 'Home Oven by Riya', category: 'Food', amount: 249, desc: 'Custom cakes, brownies and dessert boxes made locally.', clicks: 70, time: '2 hrs ago', icon: '🧁' },
   { rank: 6, name: 'Coastal Sketch Club', category: 'Community', amount: 199, desc: 'Urban sketching meetups around forts, beaches and old streets.', clicks: 63, time: '3 hrs ago', icon: '🎨' },
   { rank: 7, name: 'Daman Tuition Hub', category: 'Education', amount: 149, desc: 'Local tutors for school, boards and entrance preparation.', clicks: 53, time: '4 hrs ago', icon: '📚' },
-  { rank: 8, name: 'FreshCatch Home Kitchen', category: 'Food', amount: 99, desc: 'Weekend seafood menu. Pre-orders through WhatsApp.', clicks: 44, time: '5 hrs ago', icon: '🐟' }
+  { rank: 8, name: 'FreshCatch Home Kitchen', category: 'Food', amount: 99, desc: 'Weekend seafood menu. Pre-orders through WhatsApp.', clicks: 44, time: '5 hrs ago', icon: '🐟' },
+  { rank: 9, name: 'Daman Fort Walks', category: 'Discovery', amount: 89, desc: 'Local stories and slow walks through Moti Daman’s old streets.', clicks: 38, time: '6 hrs ago', icon: '🏰' },
+  { rank: 10, name: 'Moti Daman Barber', category: 'Service', amount: 79, desc: 'Classic cuts, beard trims and easy appointments near the fort.', clicks: 31, time: '7 hrs ago', icon: '💈' },
+  { rank: 11, name: 'Beach Cleanup Circle', category: 'Community', amount: 69, desc: 'Weekend cleanup meetups and a little more care for the coast.', clicks: 26, time: '8 hrs ago', icon: '🌱' },
+  { rank: 12, name: 'Portuguese House Stay', category: 'Stay', amount: 59, desc: 'A quiet heritage stay with local breakfast in Moti Daman.', clicks: 21, time: '9 hrs ago', icon: '🏠' }
 ];
 const categories = ['All', ...new Set(listings.map((listing) => listing.category))];
 const formatINR = (value) => new Intl.NumberFormat('en-IN').format(value);
@@ -68,6 +72,9 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
   const [sponsorAmount, setSponsorAmount] = useState(499);
   const [sponsored, setSponsored] = useState(false);
   const visibleListings = category === 'All' ? listings : listings.filter((listing) => listing.category === category);
+  const topThree = visibleListings.slice(0, 3);
+  const topTen = visibleListings.slice(3, 10);
+  const rest = visibleListings.slice(10);
   const submitClaim = () => {
     if (!link.trim()) return;
     setClaimed(true);
@@ -116,19 +123,20 @@ function Board({amount,setAmount,link,setLink,claimed,setClaimed,position}){
         <span className="board-count">{visibleListings.length} live listings</span>
       </div>
 
-      <div className="top-three">
-        {visibleListings.slice(0,3).map(card => <ListingCard key={card.rank} card={card} featured onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}
-      </div>
-      <h3 className="subhead">Top {visibleListings.length}</h3>
-      <div className="rest-list">
-        {visibleListings.slice(3).map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}
-      </div>
+      <GroupSeparator label="Top 3" />
+      <div className="top-three">{topThree.map(card => <ListingCard key={card.rank} card={card} featured onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div>
+      {topTen.length > 0 && <><GroupSeparator label="Top 10" /><div className="rest-list">{topTen.map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
+      {rest.length > 0 && <><GroupSeparator label="The rest" /><div className="rest-list">{rest.map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
     </section>
   </main>
 }
 
 function UtilityPanel({title,icon,summary,value,open,onClick,children}){
   return <div className={`utility-panel ${open ? 'is-open' : ''}`}><button className="utility-toggle" aria-expanded={open} onClick={onClick}><span className="utility-title">{icon}<strong>{title}</strong></span><span className="utility-summary">{summary}</span><b>{value}</b><ChevronUp size={16} className="utility-chevron" /></button>{open && <div className="utility-content">{children}</div>}</div>
+}
+
+function GroupSeparator({label}){
+  return <div className="group-separator" role="separator" aria-label={label}><span></span><strong>{label}</strong><span></span></div>
 }
 
 function ListingCard({card,featured,onTakeSpot}){
@@ -147,7 +155,7 @@ function ListingCard({card,featured,onTakeSpot}){
 }
 
 function Stats(){
-  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<Eye/>} value="12,420" label="board views · 24h" /><Stat icon={<MousePointerClick/>} value="1,904" label="listing clicks · 24h" /><Stat icon={<MapPin/>} value="8" label="live spots" /><Stat icon={<TrendingUp/>} value="₹2,264" label="standing bids" /><Stat icon={<BarChart3/>} value="42" label="bids this week" /><Stat icon={<Heart/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{listings.slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{recentBids.map((bid) => <div className="recent-stat-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><ShieldCheck size={20}/><span>Stats are currently sample data. Anonymous analytics will be connected once listings have real IDs and click events.</span></div></main>
+  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<Eye/>} value="12,420" label="board views · 24h" /><Stat icon={<MousePointerClick/>} value="1,904" label="listing clicks · 24h" /><Stat icon={<MapPin/>} value="12" label="live spots" /><Stat icon={<TrendingUp/>} value="₹2,264" label="standing bids" /><Stat icon={<BarChart3/>} value="42" label="bids this week" /><Stat icon={<Heart/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{listings.slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{recentBids.map((bid) => <div className="recent-stat-row" key={bid.name}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><ShieldCheck size={20}/><span>Stats are currently sample data. Anonymous analytics will be connected once listings have real IDs and click events.</span></div></main>
 }
 
 function Stat({icon,value,label}){ return <div className="stat-card">{icon}<strong>{value}</strong><span>{label}</span></div> }
@@ -158,7 +166,7 @@ function MiniChart(){
 }
 
 function AboutPage(){
-  return <main className="simple-page info-page"><span className="eyebrow">ABOUT MADE IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Made in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>8</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><CheckCircle2 size={20}/><span>Made in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
+  return <main className="simple-page info-page"><span className="eyebrow">ABOUT MADE IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Made in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>12</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><CheckCircle2 size={20}/><span>Made in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
 }
 
 function RulesPage(){
