@@ -12,7 +12,7 @@
   font-synthesis:none;
 }
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at 50% 0%,#fff 0,#f3f4f6 42%,#eef0f3 100%);min-height:100vh}
+body{margin:0;background:radial-gradient(circle at 50% 0%,#fff 0,#f3f4f6 42%,#eef0f3 100%);min-height:100vh;letter-spacing:-.012em}
 button,input{font:inherit}
 button{cursor:pointer}
 .app-shell{width:min(100%,1050px);margin:auto;min-height:100vh;padding:24px 24px 80px}
