@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
-import { createListingSubmission, fetchApprovedListings, supabase, supabaseConfigured } from './lib/supabase';
+import { createListingSubmission, fetchApprovedListings, incrementHomepageView, incrementListingView, supabase, supabaseConfigured } from './lib/supabase';
 import { razorpayConfigured, startRazorpayPayment } from './lib/razorpay';
 import logoUrl from './assets/logo.png';
 import './styles.css';
@@ -31,6 +31,7 @@ function App(){
   const [activity, setActivity] = useState([]);
   const [dataMode, setDataMode] = useState(supabaseConfigured ? 'connecting' : 'unavailable');
   const [onlineCount, setOnlineCount] = useState(0);
+  const [homepageViews, setHomepageViews] = useState(0);
   useEffect(() => {
     let active = true;
     fetchApprovedListings().then(({data, error, mode}) => {
@@ -39,6 +40,11 @@ function App(){
       setDataMode(error ? 'error' : mode);
     });
     return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    incrementHomepageView().then(({data, error}) => {
+      if (!error && typeof data === 'number') setHomepageViews(data);
+    });
   }, []);
   useEffect(() => {
     if (!supabase) return undefined;
@@ -80,8 +86,15 @@ function App(){
     return sorted.findIndex(x => x.amount === amount && !x.name) + 1;
   }, [amount, boardListings]);
 
+  const trackListingView = async (listingId) => {
+    const {data, error} = await incrementListingView(listingId);
+    if (!error && typeof data === 'number') {
+      setBoardListings((items) => items.map((item) => item.id === listingId ? {...item, listingViews: data} : item));
+    }
+  };
+
   const page = {
-    Board: <Board listings={boardListings} onlineCount={onlineCount} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
+    Board: <Board listings={boardListings} onlineCount={onlineCount} homepageViews={homepageViews} onListingView={trackListingView} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
     Stats: <Stats listings={boardListings} recentBids={activity} />,
     About: <AboutPage listings={boardListings} />,
     Rules: <RulesPage />,
@@ -102,7 +115,7 @@ function App(){
   </div>
 }
 
-function Board({listings: boardListings, onlineCount, recentBids: boardActivity, amount, setAmount, link, setLink, listingName, setListingName, listingDescription, setListingDescription, ownerName, setOwnerName, ownerContact, setOwnerContact, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit, dataMode}){
+function Board({listings: boardListings, onlineCount, homepageViews, onListingView, recentBids: boardActivity, amount, setAmount, link, setLink, listingName, setListingName, listingDescription, setListingDescription, ownerName, setOwnerName, ownerContact, setOwnerContact, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit, dataMode}){
   const [category, setCategory] = useState('All');
   const [openPanel, setOpenPanel] = useState(null);
   const [claimError, setClaimError] = useState('');
@@ -115,7 +128,7 @@ function Board({listings: boardListings, onlineCount, recentBids: boardActivity,
   const topThree = visibleListings.slice(0, 3);
   const topTen = visibleListings.slice(3, 10);
   const rest = visibleListings.slice(10);
-  const totalViews = boardListings.reduce((sum, listing) => sum + (listing.listingViews || 0), 0);
+  const totalViews = homepageViews + boardListings.reduce((sum, listing) => sum + (listing.listingViews || 0), 0);
   const submitClaim = async () => {
     if (!link.trim()) return;
     if (!listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()) {
@@ -201,9 +214,9 @@ function Board({listings: boardListings, onlineCount, recentBids: boardActivity,
       </div>
 
       {visibleListings.length === 0 && <div className="empty-board"><strong>No approved listings yet.</strong><span>Be the first to claim a spot on the live Daman Board.</span></div>}
-      {topThree.length > 0 && <><GroupSeparator label="Top 3" /><div className="top-three">{topThree.map(card => <ListingCard key={card.rank} card={card} featured onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
-      {topTen.length > 0 && <><GroupSeparator label="Top 10" /><div className="rest-list">{topTen.map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
-      {rest.length > 0 && <><GroupSeparator label="The rest" /><div className="rest-list">{rest.map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
+      {topThree.length > 0 && <><GroupSeparator label="Top 3" /><div className="top-three">{topThree.map(card => <ListingCard key={card.rank} card={card} onListingView={onListingView} featured onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
+      {topTen.length > 0 && <><GroupSeparator label="Top 10" /><div className="rest-list">{topTen.map(card => <ListingCard key={card.rank} card={card} onListingView={onListingView} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
+      {rest.length > 0 && <><GroupSeparator label="The rest" /><div className="rest-list">{rest.map(card => <ListingCard key={card.rank} card={card} onListingView={onListingView} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
     </section>
   </main>
 }
@@ -216,7 +229,7 @@ function GroupSeparator({label}){
   return <div className="group-separator" role="separator" aria-label={label}><span></span><strong>{label}</strong><span></span></div>
 }
 
-function ListingCard({card,featured,onTakeSpot}){
+function ListingCard({card,featured,onTakeSpot,onListingView}){
   const footer = (
     <div className="listing-footer">
       <span className="click-badge"><AppIcon icon={ViewIcon} size={featured?20:16}/>{formatReach(card.clicks)} Daman Reach</span>
@@ -231,7 +244,7 @@ function ListingCard({card,featured,onTakeSpot}){
         <div className="avatar">{card.icon}</div>
       </div>
       <div className="listing-content">
-        <div className="listing-title-row"><h4>{card.name}</h4><strong className="bid">₹{formatINR(card.amount)}</strong></div>
+        <div className="listing-title-row"><h4><a href={card.url} target="_blank" rel="noreferrer" onClick={() => onListingView?.(card.id)}>{card.name}</a></h4><strong className="bid">₹{formatINR(card.amount)}</strong></div>
         <p>{card.desc}</p>
         {!featured && footer}
       </div>

@@ -29,3 +29,15 @@ export async function fetchApprovedListings() {
 
   return { data, error, mode: 'supabase' };
 }
+
+export async function incrementHomepageView() {
+  if (!supabase) return { data: null, error: null, mode: 'local' };
+  const { data, error } = await supabase.rpc('increment_homepage_view');
+  return { data, error, mode: 'supabase' };
+}
+
+export async function incrementListingView(listingId) {
+  if (!supabase || !listingId) return { data: null, error: null, mode: 'local' };
+  const { data, error } = await supabase.rpc('increment_listing_view', { target_listing_id: listingId });
+  return { data, error, mode: 'supabase' };
+}
