@@ -30,6 +30,7 @@ function App(){
   const [boardListings, setBoardListings] = useState([]);
   const [activity, setActivity] = useState([]);
   const [dataMode, setDataMode] = useState(supabaseConfigured ? 'connecting' : 'unavailable');
+  const [onlineCount, setOnlineCount] = useState(0);
   useEffect(() => {
     let active = true;
     fetchApprovedListings().then(({data, error, mode}) => {
@@ -38,6 +39,22 @@ function App(){
       setDataMode(error ? 'error' : mode);
     });
     return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    if (!supabase) return undefined;
+    const presenceKey = window.crypto?.randomUUID?.() || `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const channel = supabase.channel('best-in-daman:presence', {config: {presence: {key: presenceKey}}});
+    const updateOnlineCount = () => {
+      const state = channel.presenceState();
+      setOnlineCount(Object.values(state).reduce((count, visitors) => count + visitors.length, 0));
+    };
+    channel.on('presence', {event: 'sync'}, updateOnlineCount).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({online_at: new Date().toISOString()});
+        updateOnlineCount();
+      }
+    });
+    return () => { channel.untrack(); supabase.removeChannel(channel); };
   }, []);
 
   const submitListing = async ({url, bid, category}) => {
@@ -64,7 +81,7 @@ function App(){
   }, [amount, boardListings]);
 
   const page = {
-    Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
+    Board: <Board listings={boardListings} onlineCount={onlineCount} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
     Stats: <Stats listings={boardListings} recentBids={activity} />,
     About: <AboutPage listings={boardListings} />,
     Rules: <RulesPage />,
@@ -85,7 +102,7 @@ function App(){
   </div>
 }
 
-function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, listingName, setListingName, listingDescription, setListingDescription, ownerName, setOwnerName, ownerContact, setOwnerContact, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit, dataMode}){
+function Board({listings: boardListings, onlineCount, recentBids: boardActivity, amount, setAmount, link, setLink, listingName, setListingName, listingDescription, setListingDescription, ownerName, setOwnerName, ownerContact, setOwnerContact, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit, dataMode}){
   const [category, setCategory] = useState('All');
   const [openPanel, setOpenPanel] = useState(null);
   const [claimError, setClaimError] = useState('');
@@ -120,7 +137,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   };
   return <main>
     <section className="hero">
-      <div className="live-pill"><span className="pulse-dot"/> <strong>{boardListings.length} approved listings</strong><span className="divider"/> <b>{formatReach(totalReach)}</b>&nbsp;Daman Reach</div>
+      <div className="live-pill"><span className="pulse-dot"/> <strong>{onlineCount} online now</strong><span className="divider"/> <b>{formatReach(totalReach)}</b>&nbsp;Daman Reach</div>
       <h1>Claim <em>#1</em> in<br/>Daman today.</h1>
       <p className="hero-copy"><strong>Spots start at ₹29.</strong> Bid under the #1 price and you still land on the board — exactly where your amount ranks.</p>
 
