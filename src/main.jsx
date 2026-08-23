@@ -18,7 +18,7 @@ function mapSupabaseListing(item){
 }
 
 function App(){
-  const [amount, setAmount] = useState(299);
+  const [amount, setAmount] = useState(49);
   const [link, setLink] = useState('');
   const [listingName, setListingName] = useState('');
   const [listingDescription, setListingDescription] = useState('');
