@@ -28,6 +28,7 @@ const listings = [
 ];
 const categories = ['All', ...new Set(listings.map((listing) => listing.category))];
 const formatINR = (value) => new Intl.NumberFormat('en-IN').format(value);
+const formatReach = (value) => new Intl.NumberFormat('en-IN', {notation: 'compact', maximumFractionDigits: 1}).format(value);
 const sponsorRows = [
   { rank: 1, name: 'Coastal Creators Club', amount: 799, icon: '🌊' },
   { rank: 2, name: 'Nani Daman Market', amount: 649, icon: '🛍️' },
@@ -52,7 +53,7 @@ function listingNameFromLink(link){
   } catch { return 'New Daman listing'; }
 }
 function mapSupabaseListing(item){
-  return {rank: 0, id: item.id, name: item.name, url: item.url, category: item.category, amount: item.current_bid, desc: item.description, clicks: item.clicks || 0, time: 'live', icon: '📍'};
+  return {rank: 0, id: item.id, name: item.name, url: item.url, category: item.category, amount: item.current_bid, desc: item.description, clicks: item.unique_reach || 0, impressions: item.impressions || 0, listingViews: item.listing_views || 0, time: 'live', icon: '📍'};
 }
 
 function App(){
@@ -165,7 +166,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   };
   return <main>
     <section className="hero">
-      <div className="live-pill"><span className="pulse-dot"/> <strong>47 online now</strong><span className="divider"/> <b>12,420</b>&nbsp;views today</div>
+      <div className="live-pill"><span className="pulse-dot"/> <strong>47 online now</strong><span className="divider"/> <b>12,420</b>&nbsp;local views today</div>
       <h1>Claim <em>#1</em> in<br/>Daman today.</h1>
       <p className="hero-copy"><strong>Spots start at ₹49.</strong> Bid under the #1 price and you still land on the board — exactly where your amount ranks.</p>
 
@@ -247,7 +248,7 @@ function GroupSeparator({label}){
 function ListingCard({card,featured,onTakeSpot}){
   const footer = (
     <div className="listing-footer">
-      <span className="click-badge"><AppIcon icon={Cursor01Icon} size={featured?20:16}/>{card.clicks} clicks</span>
+      <span className="click-badge"><AppIcon icon={ViewIcon} size={featured?20:16}/>{formatReach(card.clicks)} Daman Reach</span>
       <span className="listing-time">{card.time}</span>
       <button className="take-spot" onClick={onTakeSpot}>Take this spot</button>
     </div>
@@ -271,8 +272,8 @@ function ListingCard({card,featured,onTakeSpot}){
 function Stats({listings: boardListings, recentBids: boardActivity}){
   const liveCount = boardListings.length;
   const standingBids = boardListings.reduce((sum, item) => sum + item.amount, 0);
-  const totalClicks = boardListings.reduce((sum, item) => sum + item.clicks, 0);
-  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="board views · 24h" /><Stat icon={<AppIcon icon={Cursor01Icon}/>} value={formatINR(totalClicks)} label="listing clicks · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value={liveCount} label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value={`₹${formatINR(standingBids)}`} label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value={boardActivity.length} label="recent bids" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Traffic · last 24 hours</h2><span>12,420 page views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Most clicked listings</h2><span>Top 5</span></div>{[...boardListings].sort((a,b)=>b.clicks-a.clicks).slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{listing.clicks} clicks</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{boardActivity.slice(0,5).map((bid, index) => <div className="recent-stat-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Stats are persisted locally in this MVP. Supabase analytics can replace this store without changing the UI contract.</span></div></main>
+  const totalReach = boardListings.reduce((sum, item) => sum + item.clicks, 0);
+  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="local views · 24h" /><Stat icon={<AppIcon icon={ViewIcon}/>} value={formatReach(totalReach)} label="Daman Reach · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value={liveCount} label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value={`₹${formatINR(standingBids)}`} label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value={boardActivity.length} label="recent bids" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Local reach · last 24 hours</h2><span>12,420 local views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Highest Daman Reach</h2><span>Top 5</span></div>{[...boardListings].sort((a,b)=>b.clicks-a.clicks).slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{formatReach(listing.clicks)} reach</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{boardActivity.slice(0,5).map((bid, index) => <div className="recent-stat-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Public reach is currently represented by the local MVP dataset. Supabase analytics will separate impressions, listing views, and actions.</span></div></main>
 }
 
 function Stat({icon,value,label}){ return <div className="stat-card">{icon}<strong>{value}</strong><span>{label}</span></div> }

@@ -23,7 +23,7 @@ export async function fetchApprovedListings() {
 
   const { data, error } = await supabase
     .from('listings')
-    .select('id, url, name, category, description, current_bid, clicks, created_at, updated_at')
+    .select('id, url, name, category, description, current_bid, impressions, unique_reach, listing_views, created_at, updated_at')
     .eq('status', 'approved')
     .order('current_bid', { ascending: false });
 

@@ -33,8 +33,9 @@ npm run build
 - Supabase-ready client with offline fallback when environment keys are absent
 - Expanded submission details: listing name, description, owner contact, and category
 - Moderation-aware submissions enter `pending` status before becoming public
+- Analytics model separates impressions, unique reach, listing views, and actions such as WhatsApp, calls, directions, saves, and shares
 - Expandable Spotlight and Recent bids activity panels
-- Live Stats with metrics, traffic chart, clicked listings, and bid history
+- Live Stats with Daman Reach, local views, traffic chart, and bid history
 - Rich About and Rules content surfaces with shared footer navigation
 - Data shape ready to swap from sample data to Supabase rows
 
@@ -49,4 +50,4 @@ Without those environment variables, the app intentionally continues using its l
 
 ## Next production steps
 
-Add authenticated owner accounts, an admin moderation UI, server-side bid/payment functions, Razorpay webhooks, analytics/click tracking, abuse prevention, and deployment. Keep payment creation and webhook verification server-side; never place Razorpay secrets in the client.
+Add authenticated owner accounts, an admin moderation UI, server-side bid/payment functions, Razorpay webhooks, analytics for impressions, unique reach, listing views, and actions, abuse prevention, and deployment. Keep payment creation and webhook verification server-side; never place Razorpay secrets in the client.
