@@ -60,6 +60,13 @@ The payment flow uses Razorpay Standard Checkout. The browser receives only the 
 
 Payments verify successfully before the listing is eligible for moderation approval; a paid listing remains `pending` until an admin approves it.
 
+## Admin setup
+
+1. Create an admin user in Supabase Authentication.
+2. Run the profile migration in [`supabase/migrations/003_admin_profiles.sql`](supabase/migrations/003_admin_profiles.sql).
+3. Add that user to `public.profiles` with `role = 'admin'`, or add the email to the server-only `ADMIN_EMAILS` variable.
+4. Open `/` and choose **Admin** in the navigation to sign in and review pending listings.
+
 ## Next production steps
 
 Add authenticated owner accounts, an admin moderation UI, server-side bid/payment functions, Razorpay webhooks, analytics for impressions, unique reach, listing views, and actions, abuse prevention, and deployment. Keep payment creation and webhook verification server-side; never place Razorpay secrets in the client.

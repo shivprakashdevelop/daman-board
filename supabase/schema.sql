@@ -4,6 +4,12 @@
 
 create extension if not exists pgcrypto;
 
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  role text not null default 'user' check (role in ('user', 'admin')),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.listings (
   id uuid primary key default gen_random_uuid(),
   url text not null,
@@ -58,6 +64,7 @@ create index if not exists listing_events_listing_idx on public.listing_events(l
 alter table public.listings enable row level security;
 alter table public.bids enable row level security;
 alter table public.listing_events enable row level security;
+alter table public.profiles enable row level security;
 
 -- Public visitors can only see approved listings.
 create policy "approved listings are public"

@@ -27,3 +27,20 @@ export function requirePost(req, res) {
   if (req.method !== 'POST') { json(res, 405, {error: 'Method not allowed'}); return false; }
   return true;
 }
+
+export async function requireAdmin(req, res) {
+  const authorization = req.headers.authorization || '';
+  const accessToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+  if (!accessToken) { json(res, 401, {error: 'Admin sign-in required.'}); return null; }
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !publishableKey) { json(res, 500, {error: 'Supabase public environment is not configured.'}); return null; }
+  const publicClient = createClient(url, publishableKey, {auth: {autoRefreshToken: false, persistSession: false}});
+  const {data: {user}, error: userError} = await publicClient.auth.getUser(accessToken);
+  if (userError || !user) { json(res, 401, {error: 'Admin session is invalid.'}); return null; }
+  const admin = adminClient();
+  const {data: profile} = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle();
+  const allowedEmails = (process.env.ADMIN_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean);
+  if (profile?.role !== 'admin' && !allowedEmails.includes((user.email || '').toLowerCase())) { json(res, 403, {error: 'This account is not an admin.'}); return null; }
+  return {user, admin};
+}

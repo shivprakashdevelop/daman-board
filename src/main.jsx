@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
-import { createListingSubmission, fetchApprovedListings, supabaseConfigured } from './lib/supabase';
+import { createListingSubmission, fetchApprovedListings, supabase, supabaseConfigured } from './lib/supabase';
 import { razorpayConfigured, startRazorpayPayment } from './lib/razorpay';
 import logoUrl from './assets/logo.png';
 import './styles.css';
@@ -129,7 +129,8 @@ function App(){
     Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
     Stats: <Stats listings={boardListings} recentBids={activity} />,
     About: <AboutPage />,
-    Rules: <RulesPage />
+    Rules: <RulesPage />,
+    Admin: <AdminPage />
   };
 
   return <div className="app-shell">
@@ -138,7 +139,7 @@ function App(){
         <img src={logoUrl} alt="Best in Daman #1" />
       </button>
       <nav>
-        {['Board','Stats','About','Rules'].map(item => <button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}
+        {['Board','Stats','About','Rules','Admin'].map(item => <button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}
       </nav>
     </header>
     {page[tab]}
@@ -292,6 +293,43 @@ function Stats({listings: boardListings, recentBids: boardActivity}){
   const standingBids = boardListings.reduce((sum, item) => sum + item.amount, 0);
   const totalReach = boardListings.reduce((sum, item) => sum + item.clicks, 0);
   return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="local views · 24h" /><Stat icon={<AppIcon icon={ViewIcon}/>} value={formatReach(totalReach)} label="Daman Reach · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value={liveCount} label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value={`₹${formatINR(standingBids)}`} label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value={boardActivity.length} label="recent bids" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Local reach · last 24 hours</h2><span>12,420 local views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Highest Daman Reach</h2><span>Top 5</span></div>{[...boardListings].sort((a,b)=>b.clicks-a.clicks).slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{formatReach(listing.clicks)} reach</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{boardActivity.slice(0,5).map((bid, index) => <div className="recent-stat-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Public reach is currently represented by the local MVP dataset. Supabase analytics will separate impressions, listing views, and actions.</span></div></main>
+}
+
+function AdminPage(){
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [session, setSession] = useState(null);
+  const [pendingListings, setPendingListings] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const loadListings = async (currentSession) => {
+    const response = await fetch('/api/admin-listings', {headers: {Authorization: `Bearer ${currentSession.access_token}`}});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not load listings.');
+    setPendingListings(result.listings || []);
+  };
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({data}) => { if (data.session) { setSession(data.session); loadListings(data.session).catch((loadError) => setError(loadError.message)); } });
+  }, []);
+  const signIn = async (event) => {
+    event.preventDefault(); setLoading(true); setError('');
+    const {data, error: signInError} = await supabase.auth.signInWithPassword({email, password});
+    if (signInError) setError(signInError.message);
+    else { setSession(data.session); try { await loadListings(data.session); } catch (loadError) { setError(loadError.message); } }
+    setLoading(false);
+  };
+  const moderate = async (id, status) => {
+    setLoading(true); setError('');
+    const response = await fetch('/api/admin-listings', {method: 'PATCH', headers: {'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`}, body: JSON.stringify({id, status})});
+    const result = await response.json();
+    if (!response.ok) setError(result.error || 'Could not update listing.');
+    else setPendingListings((items) => items.filter((item) => item.id !== id));
+    setLoading(false);
+  };
+  if (!supabaseConfigured) return <main className="simple-page info-page"><span className="eyebrow">ADMIN</span><h1>Supabase is<br/><em>not connected.</em></h1><p>Add the Supabase environment variables in Vercel before using moderation.</p></main>;
+  if (!session) return <main className="simple-page info-page admin-page"><span className="eyebrow">ADMIN MODERATION</span><h1>Review what goes<br/><em>on the board.</em></h1><p>Sign in with the admin account created in Supabase Authentication.</p><form className="admin-login" onSubmit={signIn}><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Admin email" required /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" required /><button className="claim-submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button></form>{error && <p className="claim-error">{error}</p>}</main>;
+  return <main className="page-wrap admin-page"><div className="page-intro"><span className="eyebrow">ADMIN MODERATION</span><h1>Pending<br/><em>listings.</em></h1><p>Approve genuine local listings, or pause anything that needs a closer look.</p></div><div className="admin-toolbar"><strong>{pendingListings.length} awaiting review</strong><button onClick={() => supabase.auth.signOut().then(() => setSession(null))}>Sign out</button></div>{error && <p className="claim-error">{error}</p>}<div className="admin-list">{pendingListings.length === 0 ? <div className="data-card"><strong>Nothing waiting for review.</strong><p className="muted">New paid submissions will appear here.</p></div> : pendingListings.map((listing) => <article className="admin-item" key={listing.id}><div><span className="eyebrow">{listing.category} · ₹{formatINR(listing.current_bid)}</span><h2>{listing.name}</h2><p>{listing.description}</p><small>{listing.owner_name} · {listing.owner_contact}</small><a href={listing.url} target="_blank" rel="noreferrer">Open listing ↗</a></div><div className="admin-actions"><button className="admin-approve" disabled={loading} onClick={() => moderate(listing.id, 'approved')}>Approve</button><button disabled={loading} onClick={() => moderate(listing.id, 'paused')}>Pause</button><button className="admin-reject" disabled={loading} onClick={() => moderate(listing.id, 'rejected')}>Reject</button></div></article>)}</div></main>;
 }
 
 function Stat({icon,value,label}){ return <div className="stat-card">{icon}<strong>{value}</strong><span>{label}</span></div> }
