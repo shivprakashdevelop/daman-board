@@ -17,6 +17,13 @@ export default async function handler(req, res) {
       await context.admin.from('listing_events').insert({listing_id: body.id, event_type: body.status === 'approved' ? 'approved' : body.status === 'rejected' ? 'rejected' : 'submitted', metadata: {moderator_id: context.user.id, note: body.note || null}});
       return json(res, 200, {listing: data});
     }
+    if (req.method === 'DELETE') {
+      const body = await readBody(req);
+      if (!body.id) return json(res, 400, {error: 'Listing id is required.'});
+      const {error} = await context.admin.from('listings').delete().eq('id', body.id);
+      if (error) throw error;
+      return json(res, 200, {ok: true});
+    }
     return json(res, 405, {error: 'Method not allowed'});
   } catch (error) { return json(res, 500, {error: error.message || 'Admin request failed.'}); }
 }
