@@ -64,7 +64,7 @@ function App(){
   const [listingDescription, setListingDescription] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerContact, setOwnerContact] = useState('');
-  const [tab, setTab] = useState('Board');
+  const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get('admin') === '1' ? 'Admin' : 'Board');
   const [claimed, setClaimed] = useState(false);
   const [listingCategory, setListingCategory] = useState('');
   const [boardListings, setBoardListings] = useState(() => readStored(LISTINGS_KEY, listings));
@@ -139,7 +139,7 @@ function App(){
         <img src={logoUrl} alt="Best in Daman #1" />
       </button>
       <nav>
-        {['Board','Stats','About','Rules','Admin'].map(item => <button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}
+        {['Board','Stats','About','Rules'].map(item => <button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}
       </nav>
     </header>
     {page[tab]}

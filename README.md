@@ -65,7 +65,7 @@ Payments verify successfully before the listing is eligible for moderation appro
 1. Create an admin user in Supabase Authentication.
 2. Run the profile migration in [`supabase/migrations/003_admin_profiles.sql`](supabase/migrations/003_admin_profiles.sql).
 3. Add that user to `public.profiles` with `role = 'admin'`, or add the email to the server-only `ADMIN_EMAILS` variable.
-4. Open `/` and choose **Admin** in the navigation to sign in and review pending listings.
+4. Open `/?admin=1` to sign in and review pending listings. The Admin entry is intentionally hidden from the public navigation.
 
 ## Next production steps
 
