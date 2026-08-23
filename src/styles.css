@@ -133,8 +133,8 @@ button{cursor:pointer}
 @media(max-width:700px){.admin-edit-form{grid-template-columns:1fr;min-width:0}.admin-edit-form textarea{grid-column:auto}}
 
 /* Theme control */
-.topbar nav .theme-toggle{width:36px;height:36px;display:grid;place-items:center;flex:none;border:1px solid rgba(35,57,79,.12);border-radius:999px;background:rgba(255,255,255,.72);color:#23394f;padding:0;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
-.topbar nav .theme-toggle:hover{background:#fff;transform:translateY(-1px)}
+.topbar nav .theme-toggle{width:36px;height:36px;display:grid;place-items:center;flex:none;border:0;border-radius:0;background:transparent;color:#23394f;padding:0;transition:color .2s ease,opacity .2s ease}
+.topbar nav .theme-toggle:hover{background:transparent;opacity:.7}
 @media(max-width:700px){.topbar nav .theme-toggle{width:30px;height:30px}.topbar nav .theme-toggle svg{width:16px;height:16px}}
 
 /* Dark theme */
@@ -143,8 +143,8 @@ html[data-theme="dark"] body{background:radial-gradient(circle at 50% 0%,#182331
 html[data-theme="dark"] .topbar{border-color:rgba(255,255,255,.1);background:rgba(20,27,36,.84);box-shadow:0 12px 32px rgba(0,0,0,.34)}
 html[data-theme="dark"] .topbar nav button{color:#aeb8c4}
 html[data-theme="dark"] .topbar nav button.active{color:#fff}
-html[data-theme="dark"] .topbar nav .theme-toggle{border-color:rgba(255,255,255,.13);background:#222d39;color:#f5c95f}
-html[data-theme="dark"] .topbar nav .theme-toggle:hover{background:#2a3745}
+html[data-theme="dark"] .topbar nav .theme-toggle{border-color:transparent;background:transparent;color:#f5c95f}
+html[data-theme="dark"] .topbar nav .theme-toggle:hover{background:transparent}
 html[data-theme="dark"] .live-pill{background:#171f29;color:#aab4c0;box-shadow:0 14px 30px rgba(0,0,0,.32)}
 html[data-theme="dark"] .live-pill b{color:#f1f6fb}
 html[data-theme="dark"] .divider{background:#3a4654}
