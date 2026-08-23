@@ -17,7 +17,7 @@ button,input{font:inherit}
 button{cursor:pointer}
 .app-shell{width:min(100%,1050px);margin:auto;min-height:100vh;padding:24px 24px 80px}
 .topbar{position:sticky;top:16px;z-index:30;display:flex;align-items:center;justify-content:space-between;width:min(100%,900px);margin:0 auto 34px;padding:8px 22px;gap:24px;border:1px solid rgba(255,255,255,.76);border-radius:999px;background:rgba(242,243,245,.82);box-shadow:0 10px 26px rgba(35,47,60,.08);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.brand{position:relative;border:0;background:transparent;display:flex;align-items:center;padding:0}
-.brand img{height:62px;width:auto;display:block}
+.brand img{height:62px;width:auto;display:block;transform:scale(1.14);transform-origin:left center}
 .spark-a{width:20px;height:20px;top:-9px;right:-16px;transform:rotate(-8deg)}
 .spark-b{width:11px;height:11px;top:16px;right:-22px;transform:rotate(14deg)}
 .spark-c{width:9px;height:9px;bottom:22px;left:-11px;transform:rotate(-16deg)}.topbar nav{display:flex;gap:34px}.topbar nav button{border:0;background:transparent;color:#71747a;font-size:16px;font-weight:400}.topbar nav button.active{color:#23394f}
