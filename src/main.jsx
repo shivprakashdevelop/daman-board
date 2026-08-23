@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
+import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { createListingSubmission, fetchApprovedListings, incrementHomepageView, incrementListingView, supabase, supabaseConfigured } from './lib/supabase';
 import { razorpayConfigured, startRazorpayPayment } from './lib/razorpay';
 import logoUrl from './assets/logo.png';
@@ -18,6 +18,11 @@ function mapSupabaseListing(item){
 }
 
 function App(){
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = window.localStorage.getItem('best-in-daman:theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [amount, setAmount] = useState(29);
   const [link, setLink] = useState('');
   const [listingName, setListingName] = useState('');
@@ -32,6 +37,11 @@ function App(){
   const [dataMode, setDataMode] = useState(supabaseConfigured ? 'connecting' : 'unavailable');
   const [onlineCount, setOnlineCount] = useState(0);
   const [homepageViews, setHomepageViews] = useState(0);
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem('best-in-daman:theme', theme);
+  }, [theme]);
   useEffect(() => {
     let active = true;
     fetchApprovedListings().then(({data, error, mode}) => {
@@ -108,6 +118,9 @@ function App(){
       </button>
       <nav>
         {['Board','Stats','About','Rules'].map(item => <button key={item} className={tab===item?'active':''} onClick={()=>setTab(item)}>{item}</button>)}
+        <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`} aria-pressed={theme === 'dark'} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+          <AppIcon icon={theme === 'dark' ? Sun03Icon : Moon02Icon} size={18}/>
+        </button>
       </nav>
     </header>
     {page[tab]}
