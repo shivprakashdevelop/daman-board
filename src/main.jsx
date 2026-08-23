@@ -11,48 +11,8 @@ function AppIcon({icon,size=24,...props}){
   return <HugeiconsIcon icon={icon} size={size} color="currentColor" strokeWidth={1.8} {...props}/>;
 }
 
-// This shape intentionally mirrors the future Supabase `listings` table.
-// Keeping the UI data-normalized makes the prototype easy to replace with a query.
-const listings = [
-  { rank: 1, name: 'Sea View Café', category: 'Food', amount: 499, desc: 'Sunset coffee, breakfast and weekend live music near the coast.', clicks: 148, time: '12 min ago', icon: '☕' },
-  { rank: 2, name: 'Daman Weekend Market', category: 'Event', amount: 420, desc: 'Local food, creators, handmade products and music this Sunday.', clicks: 121, time: '26 min ago', icon: '🎪' },
-  { rank: 3, name: 'FrameStory Daman', category: 'Creator', amount: 350, desc: 'Portraits, events and pre-wedding photography across Daman.', clicks: 95, time: '41 min ago', icon: '📸' },
-  { rank: 4, name: 'QuickFix Electrician', category: 'Service', amount: 299, desc: 'Home electrical repairs and emergency visits in Nani & Moti Daman.', clicks: 82, time: '1 hr ago', icon: '⚡' },
-  { rank: 5, name: 'Home Oven by Riya', category: 'Food', amount: 249, desc: 'Custom cakes, brownies and dessert boxes made locally.', clicks: 70, time: '2 hrs ago', icon: '🧁' },
-  { rank: 6, name: 'Coastal Sketch Club', category: 'Community', amount: 199, desc: 'Urban sketching meetups around forts, beaches and old streets.', clicks: 63, time: '3 hrs ago', icon: '🎨' },
-  { rank: 7, name: 'Daman Tuition Hub', category: 'Education', amount: 149, desc: 'Local tutors for school, boards and entrance preparation.', clicks: 53, time: '4 hrs ago', icon: '📚' },
-  { rank: 8, name: 'FreshCatch Home Kitchen', category: 'Food', amount: 99, desc: 'Weekend seafood menu. Pre-orders through WhatsApp.', clicks: 44, time: '5 hrs ago', icon: '🐟' },
-  { rank: 9, name: 'Daman Fort Walks', category: 'Discovery', amount: 89, desc: 'Local stories and slow walks through Moti Daman’s old streets.', clicks: 38, time: '6 hrs ago', icon: '🏰' },
-  { rank: 10, name: 'Moti Daman Barber', category: 'Service', amount: 79, desc: 'Classic cuts, beard trims and easy appointments near the fort.', clicks: 31, time: '7 hrs ago', icon: '💈' },
-  { rank: 11, name: 'Beach Cleanup Circle', category: 'Community', amount: 69, desc: 'Weekend cleanup meetups and a little more care for the coast.', clicks: 26, time: '8 hrs ago', icon: '🌱' },
-  { rank: 12, name: 'Portuguese House Stay', category: 'Stay', amount: 59, desc: 'A quiet heritage stay with local breakfast in Moti Daman.', clicks: 21, time: '9 hrs ago', icon: '🏠' }
-];
-const categories = ['All', ...new Set(listings.map((listing) => listing.category))];
 const formatINR = (value) => new Intl.NumberFormat('en-IN').format(value);
 const formatReach = (value) => new Intl.NumberFormat('en-IN', {notation: 'compact', maximumFractionDigits: 1}).format(value);
-const sponsorRows = [
-  { rank: 1, name: 'Coastal Creators Club', amount: 799, icon: '🌊' },
-  { rank: 2, name: 'Nani Daman Market', amount: 649, icon: '🛍️' },
-  { rank: 3, name: '@bestindaman', amount: 499, icon: '📍' }
-];
-const recentBids = [
-  { name: 'Sea View Café', action: 'moved to #1', amount: 499, time: '12 min ago', icon: '☕' },
-  { name: 'Daman Weekend Market', action: 'moved to #2', amount: 420, time: '26 min ago', icon: '🎪' },
-  { name: 'FrameStory Daman', action: 'moved to #3', amount: 350, time: '41 min ago', icon: '📸' },
-  { name: 'QuickFix Electrician', action: 'joined the board', amount: 299, time: '1 hr ago', icon: '⚡' },
-  { name: 'Home Oven by Riya', action: 'joined the board', amount: 249, time: '2 hrs ago', icon: '🧁' }
-];
-const LISTINGS_KEY = 'best-in-daman:listings:v1';
-const ACTIVITY_KEY = 'best-in-daman:activity:v1';
-function readStored(key, fallback){
-  try { return JSON.parse(window.localStorage.getItem(key)) || fallback; } catch { return fallback; }
-}
-function listingNameFromLink(link){
-  try {
-    const host = new URL(link).hostname.replace(/^www\./, '').split('.')[0];
-    return host.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-  } catch { return 'New Daman listing'; }
-}
 function mapSupabaseListing(item){
   return {rank: 0, id: item.id, name: item.name, url: item.url, category: item.category, amount: item.current_bid, desc: item.description, clicks: item.unique_reach || 0, impressions: item.impressions || 0, listingViews: item.listing_views || 0, time: 'live', icon: '📍'};
 }
@@ -67,18 +27,15 @@ function App(){
   const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get('admin') === '1' ? 'Admin' : 'Board');
   const [claimed, setClaimed] = useState(false);
   const [listingCategory, setListingCategory] = useState('');
-  const [boardListings, setBoardListings] = useState(() => readStored(LISTINGS_KEY, listings));
-  const [activity, setActivity] = useState(() => readStored(ACTIVITY_KEY, recentBids));
-  const [dataMode, setDataMode] = useState(supabaseConfigured ? 'connecting' : 'local');
-
-  useEffect(() => { window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(boardListings)); }, [boardListings]);
-  useEffect(() => { window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity.slice(0, 12))); }, [activity]);
+  const [boardListings, setBoardListings] = useState([]);
+  const [activity, setActivity] = useState([]);
+  const [dataMode, setDataMode] = useState(supabaseConfigured ? 'connecting' : 'unavailable');
   useEffect(() => {
     let active = true;
     fetchApprovedListings().then(({data, error, mode}) => {
       if (!active) return;
       if (!error && mode === 'supabase' && data) setBoardListings(data.map(mapSupabaseListing));
-      setDataMode(error ? 'local' : mode);
+      setDataMode(error ? 'error' : mode);
     });
     return () => { active = false; };
   }, []);
@@ -96,28 +53,9 @@ function App(){
         description: listingDescription.trim(), owner_name: ownerName.trim(), owner_contact: ownerContact.trim(), current_bid: bid
       });
       if (error) return {ok: false, error: error.message || 'We could not submit this listing.'};
-      setActivity([{name: data?.name || listingName.trim(), action: 'submitted for review', amount: bid, time: 'just now', icon: '📍'}, ...activity]);
       return {ok: true, status: 'pending'};
     }
-    const existingIndex = boardListings.findIndex((item) => item.url === normalizedUrl);
-    const name = listingNameFromLink(normalizedUrl);
-    const nextItem = {
-      rank: 0, name, url: normalizedUrl, category: category || 'Discovery', amount: bid,
-      desc: `A new local link from ${parsedUrl.hostname.replace(/^www\./, '')}.`, clicks: 0,
-      time: 'just now', icon: '📍'
-    };
-    if (existingIndex >= 0) {
-      const existing = boardListings[existingIndex];
-      if (bid <= existing.amount) return {ok: false, error: `Bid at least ₹50 above the current ₹${formatINR(existing.amount)}.`};
-      const next = [...boardListings];
-      next[existingIndex] = {...existing, amount: bid, time: 'just now'};
-      setBoardListings(next);
-      setActivity([{name: existing.name, action: 'raised to a new spot', amount: bid, time: 'just now', icon: existing.icon}, ...activity]);
-    } else {
-      setBoardListings([...boardListings, nextItem]);
-      setActivity([{name, action: 'joined the board', amount: bid, time: 'just now', icon: '📍'}, ...activity]);
-    }
-    return {ok: true, status: 'local'};
+    return {ok: false, error: 'Supabase is not connected. Please try again after the production database is configured.'};
   };
 
   const position = useMemo(() => {
@@ -128,7 +66,7 @@ function App(){
   const page = {
     Board: <Board listings={boardListings} recentBids={activity} amount={amount} setAmount={setAmount} link={link} setLink={setLink} listingName={listingName} setListingName={setListingName} listingDescription={listingDescription} setListingDescription={setListingDescription} ownerName={ownerName} setOwnerName={setOwnerName} ownerContact={ownerContact} setOwnerContact={setOwnerContact} listingCategory={listingCategory} setListingCategory={setListingCategory} claimed={claimed} setClaimed={setClaimed} position={position} onSubmit={submitListing} dataMode={dataMode} />,
     Stats: <Stats listings={boardListings} recentBids={activity} />,
-    About: <AboutPage />,
+    About: <AboutPage listings={boardListings} />,
     Rules: <RulesPage />,
     Admin: <AdminPage />
   };
@@ -150,8 +88,6 @@ function App(){
 function Board({listings: boardListings, recentBids: boardActivity, amount, setAmount, link, setLink, listingName, setListingName, listingDescription, setListingDescription, ownerName, setOwnerName, ownerContact, setOwnerContact, listingCategory, setListingCategory, claimed, setClaimed, position, onSubmit, dataMode}){
   const [category, setCategory] = useState('All');
   const [openPanel, setOpenPanel] = useState(null);
-  const [sponsorAmount, setSponsorAmount] = useState(499);
-  const [sponsored, setSponsored] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [showClaimDetails, setShowClaimDetails] = useState(false);
   const [claiming, setClaiming] = useState(false);
@@ -162,6 +98,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const topThree = visibleListings.slice(0, 3);
   const topTen = visibleListings.slice(3, 10);
   const rest = visibleListings.slice(10);
+  const totalReach = boardListings.reduce((sum, listing) => sum + (listing.clicks || 0), 0);
   const submitClaim = async () => {
     if (!link.trim()) return;
     if (!listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()) {
@@ -183,7 +120,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   };
   return <main>
     <section className="hero">
-      <div className="live-pill"><span className="pulse-dot"/> <strong>47 online now</strong><span className="divider"/> <b>12,420</b>&nbsp;local views today</div>
+      <div className="live-pill"><span className="pulse-dot"/> <strong>{boardListings.length} approved listings</strong><span className="divider"/> <b>{formatReach(totalReach)}</b>&nbsp;Daman Reach</div>
       <h1>Claim <em>#1</em> in<br/>Daman today.</h1>
       <p className="hero-copy"><strong>Spots start at ₹49.</strong> Bid under the #1 price and you still land on the board — exactly where your amount ranks.</p>
 
@@ -222,17 +159,15 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
           <textarea aria-label="Short description" value={listingDescription} onChange={e=>{setListingDescription(e.target.value);setClaimed(false)}} placeholder="Short description of what people will find…" rows="2" />
         </div>
       </div>
-      <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? (dataMode === 'supabase' ? 'Submitted for review. It will appear after approval.' : 'Saved to this browser. Connect Supabase to enable moderation.') : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
+      <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? 'Submitted for review. It will appear after approval.' : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
     </section>
 
     <section className="utility-panels" aria-label="Board activity">
-      <UtilityPanel title="Spotlight" icon={<AppIcon icon={HeartAddIcon} size={16}/>} summary="Local picks" value="3 spots" open={openPanel === 'spotlight'} onClick={() => setOpenPanel(openPanel === 'spotlight' ? null : 'spotlight')}>
-        <div className="utility-rows">{sponsorRows.map((sponsor) => <div className="utility-row" key={sponsor.name}><span className="utility-rank">#{sponsor.rank}</span><span className="mini-avatar">{sponsor.icon}</span><strong>{sponsor.name}</strong><b>₹{formatINR(sponsor.amount)}</b></div>)}</div>
-        <div className="utility-form"><input aria-label="Spotlight name" placeholder="Your name or page"/><input className="mini-amount" aria-label="Spotlight amount" inputMode="numeric" value={sponsorAmount} onChange={(event) => setSponsorAmount(Math.max(199, Number(event.target.value) || 199))}/><button onClick={() => setSponsored(true)}>{sponsored ? 'Queued ✓' : 'Spotlight'}</button></div>
-        <p className="utility-note">From ₹199. The highest amount gets the top local spotlight.</p>
+      <UtilityPanel title="Spotlight" icon={<AppIcon icon={HeartAddIcon} size={16}/>} summary="Top listings" value={`${Math.min(3, boardListings.length)} spots`} open={openPanel === 'spotlight'} onClick={() => setOpenPanel(openPanel === 'spotlight' ? null : 'spotlight')}>
+        {topThree.length > 0 ? <div className="utility-rows">{topThree.map((listing) => <div className="utility-row" key={listing.id || listing.name}><span className="utility-rank">#{listing.rank}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>₹{formatINR(listing.amount)}</b></div>)}</div> : <p className="empty-state">No approved listings yet.</p>}
       </UtilityPanel>
       <UtilityPanel title="Recent bids" icon={<AppIcon icon={Time04Icon} size={16}/>} summary={`${boardActivity.length} bids`} value="Live" open={openPanel === 'recent'} onClick={() => setOpenPanel(openPanel === 'recent' ? null : 'recent')}>
-        <div className="utility-rows">{boardActivity.slice(0, 5).map((bid, index) => <div className="utility-row recent-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><strong>{bid.name}</strong><span className="recent-action">{bid.action}</span><b>₹{formatINR(bid.amount)}</b><small>{bid.time}</small></div>)}</div>
+        {boardActivity.length > 0 ? <div className="utility-rows">{boardActivity.slice(0, 5).map((bid, index) => <div className="utility-row recent-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><strong>{bid.name}</strong><span className="recent-action">{bid.action}</span><b>₹{formatINR(bid.amount)}</b><small>{bid.time}</small></div>)}</div> : <p className="empty-state">No bid activity recorded yet.</p>}
       </UtilityPanel>
     </section>
 
@@ -248,8 +183,8 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
         <span className="board-count">{visibleListings.length} live listings</span>
       </div>
 
-      <GroupSeparator label="Top 3" />
-      <div className="top-three">{topThree.map(card => <ListingCard key={card.rank} card={card} featured onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div>
+      {visibleListings.length === 0 && <div className="empty-board"><strong>No approved listings yet.</strong><span>Be the first to claim a spot on the live Daman Board.</span></div>}
+      {topThree.length > 0 && <><GroupSeparator label="Top 3" /><div className="top-three">{topThree.map(card => <ListingCard key={card.rank} card={card} featured onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
       {topTen.length > 0 && <><GroupSeparator label="Top 10" /><div className="rest-list">{topTen.map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
       {rest.length > 0 && <><GroupSeparator label="The rest" /><div className="rest-list">{rest.map(card => <ListingCard key={card.rank} card={card} onTakeSpot={() => { setAmount(card.amount + 50); document.getElementById('claim-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} />)}</div></>}
     </section>
@@ -292,7 +227,8 @@ function Stats({listings: boardListings, recentBids: boardActivity}){
   const liveCount = boardListings.length;
   const standingBids = boardListings.reduce((sum, item) => sum + item.amount, 0);
   const totalReach = boardListings.reduce((sum, item) => sum + item.clicks, 0);
-  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>Everything here refreshes automatically. Counting since the board went live.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value="12,420" label="local views · 24h" /><Stat icon={<AppIcon icon={ViewIcon}/>} value={formatReach(totalReach)} label="Daman Reach · 24h" /><Stat icon={<AppIcon icon={Location01Icon}/>} value={liveCount} label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value={`₹${formatINR(standingBids)}`} label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value={boardActivity.length} label="recent bids" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value="₹799" label="highest spotlight" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Local reach · last 24 hours</h2><span>12,420 local views</span></div><span className="chart-label">Now</span></div><MiniChart /></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Highest Daman Reach</h2><span>Top 5</span></div>{[...boardListings].sort((a,b)=>b.clicks-a.clicks).slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{formatReach(listing.clicks)} reach</b></div>)}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{boardActivity.slice(0,5).map((bid, index) => <div className="recent-stat-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>)}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Public reach is currently represented by the local MVP dataset. Supabase analytics will separate impressions, listing views, and actions.</span></div></main>
+  const totalViews = boardListings.reduce((sum, item) => sum + (item.listingViews || 0), 0);
+  return <main className="stats-page page-wrap"><div className="page-intro"><span className="eyebrow">LIVE STATS</span><h1>What Daman is<br/><em>looking at today.</em></h1><p>These totals are calculated from approved listings and recorded analytics.</p><span className="updated"><span className="pulse-dot"/> Updated just now</span></div><div className="stat-grid"><Stat icon={<AppIcon icon={ViewIcon}/>} value={formatReach(totalViews)} label="listing views" /><Stat icon={<AppIcon icon={ViewIcon}/>} value={formatReach(totalReach)} label="Daman Reach" /><Stat icon={<AppIcon icon={Location01Icon}/>} value={liveCount} label="live spots" /><Stat icon={<AppIcon icon={TradeUpIcon}/>} value={`₹${formatINR(standingBids)}`} label="standing bids" /><Stat icon={<AppIcon icon={ChartLineData01Icon}/>} value={boardActivity.length} label="recent bids" /><Stat icon={<AppIcon icon={HeartAddIcon}/>} value={liveCount ? `₹${formatINR(Math.max(...boardListings.map((item) => item.amount)))}` : '₹0'} label="highest bid" /></div><div className="chart-card"><div className="chart-heading"><div><h2>Local reach</h2><span>{formatReach(totalReach)} recorded reach</span></div><span className="chart-label">Live</span></div><p className="empty-state">Time-series analytics will appear here as live events are recorded.</p></div><div className="stats-columns"><div className="data-card"><div className="data-heading"><h2>Highest Daman Reach</h2><span>Top 5</span></div>{boardListings.length ? [...boardListings].sort((a,b)=>b.clicks-a.clicks).slice(0,5).map((listing,index) => <div className="ranked-row" key={listing.id || listing.name}><span>{index + 1}</span><span className="mini-avatar">{listing.icon}</span><strong>{listing.name}</strong><b>{formatReach(listing.clicks)} reach</b></div>) : <p className="empty-state">No approved listing analytics yet.</p>}</div><div className="data-card"><div className="data-heading"><h2>Recent bids</h2><span>Live</span></div>{boardActivity.length ? boardActivity.slice(0,5).map((bid, index) => <div className="recent-stat-row" key={`${bid.name}-${index}`}><span className="mini-avatar">{bid.icon}</span><div><strong>{bid.name}</strong><small>{bid.action} · {bid.time}</small></div><b>₹{formatINR(bid.amount)}</b></div>) : <p className="empty-state">No bid activity recorded yet.</p>}</div></div><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Daman Reach is based on recorded unique reach. Listing views and actions are tracked separately as data becomes available.</span></div></main>
 }
 
 function AdminPage(){
@@ -349,28 +285,25 @@ function AdminPage(){
   };
   if (!supabaseConfigured) return <main className="simple-page info-page"><span className="eyebrow">ADMIN</span><h1>Supabase is<br/><em>not connected.</em></h1><p>Add the Supabase environment variables in Vercel before using moderation.</p></main>;
   if (!session) return <main className="simple-page info-page admin-page"><span className="eyebrow">ADMIN MODERATION</span><h1>Review what goes<br/><em>on the board.</em></h1><p>Sign in with the admin account created in Supabase Authentication.</p><form className="admin-login" onSubmit={signIn}><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Admin email" required /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" required /><button className="claim-submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button></form>{error && <p className="claim-error">{error}</p>}</main>;
-  return <main className="page-wrap admin-page"><div className="page-intro"><span className="eyebrow">ADMIN MODERATION</span><h1>All board<br/><em>listings.</em></h1><p>Review, edit, approve, pause, reject, or remove any database listing.</p></div><div className="admin-toolbar"><strong>{pendingListings.length} database listings</strong><button onClick={() => supabase.auth.signOut().then(() => setSession(null))}>Sign out</button></div>{error && <p className="claim-error">{error}</p>}<div className="admin-list">{pendingListings.length === 0 ? <div className="data-card"><strong>No database listings yet.</strong><p className="muted">The original sample cards are demo data in the frontend, not Supabase rows.</p></div> : pendingListings.map((listing) => <article className="admin-item" key={listing.id}><div>{editingId === listing.id ? <div className="admin-edit-form"><input value={editForm.name || ''} onChange={(event) => setEditForm({...editForm, name: event.target.value})} placeholder="Listing name" /><input value={editForm.url || ''} onChange={(event) => setEditForm({...editForm, url: event.target.value})} placeholder="URL" /><input value={editForm.category || ''} onChange={(event) => setEditForm({...editForm, category: event.target.value})} placeholder="Category" /><input value={editForm.owner_name || ''} onChange={(event) => setEditForm({...editForm, owner_name: event.target.value})} placeholder="Owner name" /><input value={editForm.owner_contact || ''} onChange={(event) => setEditForm({...editForm, owner_contact: event.target.value})} placeholder="Owner contact" /><input type="number" min="49" value={editForm.current_bid || 49} onChange={(event) => setEditForm({...editForm, current_bid: event.target.value})} placeholder="Bid" /><textarea value={editForm.description || ''} onChange={(event) => setEditForm({...editForm, description: event.target.value})} rows="3" placeholder="Description" /><div className="admin-actions"><button className="admin-approve" disabled={loading} onClick={saveEdit}>Save changes</button><button disabled={loading} onClick={() => setEditingId(null)}>Cancel</button></div></div> : <><span className="eyebrow">{listing.status} · {listing.category} · ₹{formatINR(listing.current_bid)}</span><h2>{listing.name}</h2><p>{listing.description}</p><small>{listing.owner_name} · {listing.owner_contact}</small><a href={listing.url} target="_blank" rel="noreferrer">Open listing ↗</a></>}</div>{editingId !== listing.id && <div className="admin-actions"><button className="admin-approve" disabled={loading || listing.status === 'approved'} onClick={() => moderate(listing.id, 'approved')}>Approve</button><button disabled={loading || listing.status === 'paused'} onClick={() => moderate(listing.id, 'paused')}>Pause</button><button className="admin-reject" disabled={loading || listing.status === 'rejected'} onClick={() => moderate(listing.id, 'rejected')}>Reject</button><button disabled={loading} onClick={() => startEdit(listing)}>Edit</button><button className="admin-delete" disabled={loading} onClick={() => deleteListing(listing)}>Delete</button></div>}</article>)}</div></main>;
+  return <main className="page-wrap admin-page"><div className="page-intro"><span className="eyebrow">ADMIN MODERATION</span><h1>All board<br/><em>listings.</em></h1><p>Review, edit, approve, pause, reject, or remove any database listing.</p></div><div className="admin-toolbar"><strong>{pendingListings.length} database listings</strong><button onClick={() => supabase.auth.signOut().then(() => setSession(null))}>Sign out</button></div>{error && <p className="claim-error">{error}</p>}<div className="admin-list">{pendingListings.length === 0 ? <div className="data-card"><strong>No database listings yet.</strong><p className="muted">Approved and pending records from Supabase will appear here.</p></div> : pendingListings.map((listing) => <article className="admin-item" key={listing.id}><div>{editingId === listing.id ? <div className="admin-edit-form"><input value={editForm.name || ''} onChange={(event) => setEditForm({...editForm, name: event.target.value})} placeholder="Listing name" /><input value={editForm.url || ''} onChange={(event) => setEditForm({...editForm, url: event.target.value})} placeholder="URL" /><input value={editForm.category || ''} onChange={(event) => setEditForm({...editForm, category: event.target.value})} placeholder="Category" /><input value={editForm.owner_name || ''} onChange={(event) => setEditForm({...editForm, owner_name: event.target.value})} placeholder="Owner name" /><input value={editForm.owner_contact || ''} onChange={(event) => setEditForm({...editForm, owner_contact: event.target.value})} placeholder="Owner contact" /><input type="number" min="49" value={editForm.current_bid || 49} onChange={(event) => setEditForm({...editForm, current_bid: event.target.value})} placeholder="Bid" /><textarea value={editForm.description || ''} onChange={(event) => setEditForm({...editForm, description: event.target.value})} rows="3" placeholder="Description" /><div className="admin-actions"><button className="admin-approve" disabled={loading} onClick={saveEdit}>Save changes</button><button disabled={loading} onClick={() => setEditingId(null)}>Cancel</button></div></div> : <><span className="eyebrow">{listing.status} · {listing.category} · ₹{formatINR(listing.current_bid)}</span><h2>{listing.name}</h2><p>{listing.description}</p><small>{listing.owner_name} · {listing.owner_contact}</small><a href={listing.url} target="_blank" rel="noreferrer">Open listing ↗</a></>}</div>{editingId !== listing.id && <div className="admin-actions"><button className="admin-approve" disabled={loading || listing.status === 'approved'} onClick={() => moderate(listing.id, 'approved')}>Approve</button><button disabled={loading || listing.status === 'paused'} onClick={() => moderate(listing.id, 'paused')}>Pause</button><button className="admin-reject" disabled={loading || listing.status === 'rejected'} onClick={() => moderate(listing.id, 'rejected')}>Reject</button><button disabled={loading} onClick={() => startEdit(listing)}>Edit</button><button className="admin-delete" disabled={loading} onClick={() => deleteListing(listing)}>Delete</button></div>}</article>)}</div></main>;
 }
 
 function Stat({icon,value,label}){ return <div className="stat-card">{icon}<strong>{value}</strong><span>{label}</span></div> }
 
-function MiniChart(){
-  const heights = [28,42,35,58,66,48,72,54,61,76,64,82,69,58,71,87,78,91,73,65,80,88,76,96];
-  return <div className="mini-chart" aria-label="Traffic chart">{heights.map((height,index) => <span key={index} style={{height: `${height}%`}} />)}</div>
-}
-
-function AboutPage(){
-  return <main className="simple-page info-page"><span className="eyebrow">ABOUT BEST IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Best in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Since launch</h2><p className="muted">The board is in its early days. Numbers below are sample data while the product foundation is being connected to live listings.</p><div className="about-stats"><div><strong>12</strong><span>live listings</span></div><div><strong>₹2,264</strong><span>standing bids</span></div><div><strong>₹799</strong><span>highest spotlight</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><AppIcon icon={CheckmarkCircle02Icon} size={20}/><span>Best in Daman is being built around local usefulness, transparent ranking, and human moderation.</span></div></main>
+function AboutPage({listings: boardListings}){
+  const standingBids = boardListings.reduce((sum, item) => sum + item.amount, 0);
+  const totalReach = boardListings.reduce((sum, item) => sum + (item.clicks || 0), 0);
+  return <main className="simple-page info-page"><span className="eyebrow">ABOUT BEST IN DAMAN</span><h1>One board for<br/><em>what’s local.</em></h1><p>Best in Daman is a public front page for the people, places and projects making the territory interesting. Put one clear link on the board, choose your number, and let the town decide what rises.</p><p>Every listing is local by design. Cafés, creators, services, events, community groups and useful discoveries all get the same transparent chance to be seen.</p><h2>Live board totals</h2><p className="muted">These figures come from approved Supabase listings and update as the board changes.</p><div className="about-stats"><div><strong>{boardListings.length}</strong><span>live listings</span></div><div><strong>₹{formatINR(standingBids)}</strong><span>standing bids</span></div><div><strong>{formatReach(totalReach)}</strong><span>Daman Reach</span></div></div><h2>Why it exists</h2><p>Local discovery should feel more like a town square than an ad dashboard. One list, one number, fully visible. If something deserves attention, it can earn its place—and anyone can move it tomorrow.</p><div className="info-note"><AppIcon icon={CheckmarkCircle02Icon} size={20}/><span>Best in Daman is built around local usefulness, transparent ranking, and human moderation.</span></div></main>
 }
 
 function RulesPage(){
-  return <main className="simple-page info-page rules-page"><span className="eyebrow">KEEP IT LOCAL</span><h1>Good boards need<br/><em>good neighbours.</em></h1><p>Best in Daman is one public board for local businesses, creators, events, services and community projects. Your spot is decided by one number: your bid.</p><RuleSection title="Ranking" items={['Spots start at ₹49 and move in ₹50 steps in this prototype.', 'Bid under #1 and you still land on the board wherever your amount ranks.', 'Existing listings keep their amount until the owner raises it or someone passes them.', 'If two listings hold the same amount, the newer bid ranks ahead.']} /><RuleSection title="What can be listed" items={['A genuine local business, event, creator, service, project or discovery in Daman.', 'Use a working Instagram, website or WhatsApp link that helps people understand the listing.', 'Listings must be useful, accurate and appropriate for a public local board.']} /><RuleSection title="After you claim" items={['Your request is reviewed before it goes live on the board.', 'Every click can eventually be counted through a tracked redirect.', 'Bids are not a guarantee of permanent placement—being passed is part of the board.']} /><RuleSection title="Payments & disputes" items={['Checkout will be handled by a server-side payment flow once Razorpay is connected.', 'Never share payment secrets in the browser or client-side code.', 'For a duplicate charge or missing listing, contact support before opening a dispute.']} /><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>These are product rules for the current foundation and will be reviewed before public launch.</span></div></main>
+  return <main className="simple-page info-page rules-page"><span className="eyebrow">KEEP IT LOCAL</span><h1>Good boards need<br/><em>good neighbours.</em></h1><p>Best in Daman is one public board for local businesses, creators, events, services and community projects. Your spot is decided by one number: your bid.</p><RuleSection title="Ranking" items={['Spots start at ₹49 and move in ₹50 steps.', 'Bid under #1 and you still land on the board wherever your amount ranks.', 'Existing listings keep their amount until the owner raises it or someone passes them.', 'If two listings hold the same amount, the newer bid ranks ahead.']} /><RuleSection title="What can be listed" items={['A genuine local business, event, creator, service, project or discovery in Daman.', 'Use a working Instagram, website or WhatsApp link that helps people understand the listing.', 'Listings must be useful, accurate and appropriate for a public local board.']} /><RuleSection title="After you claim" items={['Your request is reviewed before it goes live on the board.', 'Public reach and listing views are calculated from recorded analytics.', 'Bids are not a guarantee of permanent placement—being passed is part of the board.']} /><RuleSection title="Payments & disputes" items={['Checkout is handled through a server-side Razorpay payment flow after order verification.', 'Never share payment secrets in the browser or client-side code.', 'For a duplicate charge or missing listing, contact support before opening a dispute.']} /><div className="info-note"><AppIcon icon={ShieldCheckIcon} size={20}/><span>Approved listings and public metrics come from the live production database.</span></div></main>
 }
 
 function RuleSection({title,items}){ return <section className="rule-section"><h2>{title}</h2><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section> }
 
 function Footer({setTab}){
-  return <footer className="site-footer"><div><strong>Best in Daman®</strong><span>One local board. Your bid is your spot.</span></div><nav aria-label="Footer"><button onClick={() => setTab('Rules')}>Rules</button><button onClick={() => setTab('About')}>About</button><button onClick={() => setTab('Stats')}>Live stats</button><span>Payments coming soon</span></nav></footer>
+  return <footer className="site-footer"><div><strong>Best in Daman®</strong><span>One local board. Your bid is your spot.</span></div><nav aria-label="Footer"><button onClick={() => setTab('Rules')}>Rules</button><button onClick={() => setTab('About')}>About</button><button onClick={() => setTab('Stats')}>Live stats</button><span>Payments secured by Razorpay</span></nav></footer>
 }
 
 function InfoPage({eyebrow,title,text,cards}){

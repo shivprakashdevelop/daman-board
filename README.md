@@ -1,6 +1,6 @@
 # Made in Daman — The Daman Board
 
-A responsive front-end prototype inspired by the interaction pattern of BidYourApp, adapted for Daman businesses, creators, events and services.
+A production-ready Daman board inspired by the interaction pattern of BidYourApp, with its own Best in Daman identity.
 
 ## Run locally
 
@@ -18,26 +18,25 @@ npm run build
 ## Current foundation
 
 - Board / Stats / About / Rules navigation
-- Live viewers + views pill
+- Live Supabase listing and reach totals
 - Bid amount stepper in INR
 - Estimated leaderboard position
 - URL/Instagram/WhatsApp claim field
 - Top 3 + Top 10 local listings
 - Responsive mobile-first design
-- Daman-specific branding and sample data
+- Daman-specific branding with no seeded or demo data
 - Sunghyun Sans display typography paired with Inter UI/body text
 - Category filters and live listing count
 - Claim validation state with a clear moderation hand-off
-- Functional local MVP: submit a new listing, raise an existing bid, and recalculate rank
-- LocalStorage persistence for listings and recent activity across refreshes
-- Supabase-ready client with offline fallback when environment keys are absent
+- Production submissions create pending Supabase listings and require moderation before publication
+- No localStorage or offline demo fallback is used in production
 - Expanded submission details: listing name, description, owner contact, and category
 - Moderation-aware submissions enter `pending` status before becoming public
 - Analytics model separates impressions, unique reach, listing views, and actions such as WhatsApp, calls, directions, saves, and shares
-- Expandable Spotlight and Recent bids activity panels
-- Live Stats with Daman Reach, local views, traffic chart, and bid history
+- Expandable Spotlight and Recent bids panels backed only by available live data
+- Live Stats with Daman Reach, listing views, standing bids, and live bid history
 - Rich About and Rules content surfaces with shared footer navigation
-- Data shape ready to swap from sample data to Supabase rows
+- Public board data is read from approved Supabase rows only
 
 ## Supabase setup
 
@@ -46,7 +45,7 @@ npm run build
 3. Copy [`.env.example`](.env.example) to `.env` and add the project URL and anon key.
 4. Restart the Vite server.
 
-Without those environment variables, the app intentionally continues using its local demo mode.
+Without those environment variables, the app does not display listings or accept production submissions.
 
 ## Razorpay setup
 
