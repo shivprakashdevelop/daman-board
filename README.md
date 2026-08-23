@@ -54,7 +54,7 @@ The payment flow uses Razorpay Standard Checkout. The browser receives only the 
 
 1. Create Test Mode API keys in Razorpay.
 2. Add `VITE_RAZORPAY_KEY_ID` to Vercel for the browser checkout.
-3. Add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, and `SUPABASE_SERVICE_ROLE_KEY` as server-only Vercel environment variables.
+3. Add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `SUPABASE_URL`, and either `SUPABASE_SECRET_KEY` or the legacy `SUPABASE_SERVICE_ROLE_KEY` as server-only Vercel environment variables.
 4. Set the Razorpay webhook URL to `https://bestindaman.in/api/razorpay-webhook` and subscribe to `payment.captured`.
 5. Test with Test Mode before switching to Live Mode keys.
 

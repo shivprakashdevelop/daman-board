@@ -16,7 +16,9 @@ export function readBody(req) {
 
 export function adminClient() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Supabase now exposes `secret` keys alongside the legacy service-role key.
+  // Both are server-only and bypass RLS for trusted API handlers.
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Supabase server environment is not configured.');
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
