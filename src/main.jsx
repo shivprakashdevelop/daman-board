@@ -115,7 +115,7 @@ function Board({listings: boardListings, onlineCount, recentBids: boardActivity,
   const topThree = visibleListings.slice(0, 3);
   const topTen = visibleListings.slice(3, 10);
   const rest = visibleListings.slice(10);
-  const totalReach = boardListings.reduce((sum, listing) => sum + (listing.clicks || 0), 0);
+  const totalViews = boardListings.reduce((sum, listing) => sum + (listing.listingViews || 0), 0);
   const submitClaim = async () => {
     if (!link.trim()) return;
     if (!listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()) {
@@ -137,7 +137,7 @@ function Board({listings: boardListings, onlineCount, recentBids: boardActivity,
   };
   return <main>
     <section className="hero">
-      <div className="live-pill"><span className="pulse-dot"/> <strong>{onlineCount} online now</strong><span className="divider"/> <b>{formatReach(totalReach)}</b>&nbsp;Daman Reach</div>
+      <div className="live-pill"><span className="pulse-dot"/> <strong>{onlineCount} online now</strong><span className="divider"/> <b>{formatReach(totalViews)}</b>&nbsp;views so far</div>
       <h1>Claim <em>#1</em> in<br/>Daman today.</h1>
       <p className="hero-copy"><strong>Spots start at ₹29.</strong> Bid under the #1 price and you still land on the board — exactly where your amount ranks.</p>
 
