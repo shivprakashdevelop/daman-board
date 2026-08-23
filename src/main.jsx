@@ -334,7 +334,7 @@ function RulesPage(){
 function RuleSection({title,items}){ return <section className="rule-section"><h2>{title}</h2><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section> }
 
 function Footer({setTab}){
-  return <footer className="site-footer"><div><strong>Best in Daman®</strong><span>One local board. Your bid is your spot.</span></div><nav aria-label="Footer"><button onClick={() => setTab('Rules')}>Rules</button><button onClick={() => setTab('About')}>About</button><button onClick={() => setTab('Stats')}>Live stats</button><span>Payments secured by Razorpay</span></nav></footer>
+  return <footer className="site-footer"><div><strong>Best in Daman®</strong><span>One local board. Your bid is your spot.</span><a href="mailto:shivprakash.develop@gmail.com">shivprakash.develop@gmail.com</a></div><nav aria-label="Footer"><button onClick={() => setTab('Rules')}>Rules</button><button onClick={() => setTab('About')}>About</button><button onClick={() => setTab('Stats')}>Live stats</button><span>Payments secured by Razorpay</span></nav></footer>
 }
 
 function InfoPage({eyebrow,title,text,cards}){
