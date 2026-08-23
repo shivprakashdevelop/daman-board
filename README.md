@@ -48,6 +48,18 @@ npm run build
 
 Without those environment variables, the app intentionally continues using its local demo mode.
 
+## Razorpay setup
+
+The payment flow uses Razorpay Standard Checkout. The browser receives only the public key; order creation, signature verification, and webhook reconciliation run in the Vercel API handlers under [`api/`](api/).
+
+1. Create Test Mode API keys in Razorpay.
+2. Add `VITE_RAZORPAY_KEY_ID` to Vercel for the browser checkout.
+3. Add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, and `SUPABASE_SERVICE_ROLE_KEY` as server-only Vercel environment variables.
+4. Set the Razorpay webhook URL to `https://bestindaman.in/api/razorpay-webhook` and subscribe to `payment.captured`.
+5. Test with Test Mode before switching to Live Mode keys.
+
+Payments verify successfully before the listing is eligible for moderation approval; a paid listing remains `pending` until an admin approves it.
+
 ## Next production steps
 
 Add authenticated owner accounts, an admin moderation UI, server-side bid/payment functions, Razorpay webhooks, analytics for impressions, unique reach, listing views, and actions, abuse prevention, and deployment. Keep payment creation and webhook verification server-side; never place Razorpay secrets in the client.

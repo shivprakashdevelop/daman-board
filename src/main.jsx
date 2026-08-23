@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link01Icon, Globe02Icon, GridViewIcon, Search02Icon, OrganicFoodIcon, MinusSignIcon, PlusSignIcon, FireIcon, Store01Icon, Calendar03Icon, Camera01Icon, ToolsIcon, SparklesIcon, ShieldCheckIcon, ViewIcon, Cursor01Icon, Location01Icon, ArrowUp01Icon, HeartAddIcon, Time04Icon, TradeUpIcon, CheckmarkCircle02Icon, ChartLineData01Icon } from '@hugeicons/core-free-icons';
 import { createListingSubmission, fetchApprovedListings, supabaseConfigured } from './lib/supabase';
+import { razorpayConfigured, startRazorpayPayment } from './lib/razorpay';
 import logoUrl from './assets/logo.png';
 import './styles.css';
 
@@ -152,6 +153,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const [sponsored, setSponsored] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [showClaimDetails, setShowClaimDetails] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   const rankedListings = [...boardListings].sort((a, b) => b.amount - a.amount).map((listing, index) => ({...listing, rank: index + 1}));
   const boardCategories = ['All', ...new Set(rankedListings.map((listing) => listing.category))];
   const categoryIcons = {All: GridViewIcon, Food: OrganicFoodIcon, Event: Calendar03Icon, Service: ToolsIcon, Creator: Camera01Icon, Business: Store01Icon, Community: SparklesIcon, Discovery: Search02Icon};
@@ -166,7 +168,15 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
       setClaimError('Add your name, contact, listing name, and a short description to continue.');
       return;
     }
-    const result = await onSubmit({url: link, bid: amount, category: listingCategory});
+    setClaiming(true);
+    let result;
+    try {
+      result = razorpayConfigured ? await startRazorpayPayment({url: link, name: listingName, category: listingCategory, description: listingDescription, owner_name: ownerName, owner_contact: ownerContact, amount}) : await onSubmit({url: link, bid: amount, category: listingCategory});
+    } catch (error) {
+      result = {ok: false, error: error.message || 'We could not start the payment.'};
+    } finally {
+      setClaiming(false);
+    }
     setClaimed(Boolean(result?.ok));
     setClaimError(result?.ok ? '' : result?.error || 'We could not submit this listing.');
   };
@@ -202,7 +212,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
             </select>
             <AppIcon icon={ArrowUp01Icon} size={20}/>
           </label>
-          <button className="claim-submit" onClick={submitClaim} disabled={!link.trim() || !listingCategory}>{claimed ? 'Request received ✓' : 'Submit for review'}</button>
+          <button className="claim-submit" onClick={submitClaim} disabled={claiming || !link.trim() || !listingCategory}>{claiming ? 'Opening payment…' : claimed ? 'Request received ✓' : razorpayConfigured ? 'Pay & submit' : 'Submit for review'}</button>
         </div>
         <div className={`claim-details ${showClaimDetails ? 'is-visible' : ''}`}>
           <input aria-label="Listing name" value={listingName} onChange={e=>{setListingName(e.target.value);setClaimed(false)}} placeholder="Listing name" />

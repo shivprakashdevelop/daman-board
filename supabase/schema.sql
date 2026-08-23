@@ -38,7 +38,9 @@ create table if not exists public.bids (
   bidder_contact text not null,
   amount integer not null check (amount >= 49),
   payment_status text not null default 'unpaid' check (payment_status in ('unpaid', 'pending', 'paid', 'failed', 'refunded')),
+  razorpay_order_id text,
   razorpay_payment_id text,
+  razorpay_signature text,
   created_at timestamptz not null default now()
 );
 
