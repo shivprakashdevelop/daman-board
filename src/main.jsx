@@ -151,6 +151,7 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const [sponsorAmount, setSponsorAmount] = useState(499);
   const [sponsored, setSponsored] = useState(false);
   const [claimError, setClaimError] = useState('');
+  const [showClaimDetails, setShowClaimDetails] = useState(false);
   const rankedListings = [...boardListings].sort((a, b) => b.amount - a.amount).map((listing, index) => ({...listing, rank: index + 1}));
   const boardCategories = ['All', ...new Set(rankedListings.map((listing) => listing.category))];
   const categoryIcons = {All: GridViewIcon, Food: OrganicFoodIcon, Event: Calendar03Icon, Service: ToolsIcon, Creator: Camera01Icon, Business: Store01Icon, Community: SparklesIcon, Discovery: Search02Icon};
@@ -160,6 +161,11 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
   const rest = visibleListings.slice(10);
   const submitClaim = async () => {
     if (!link.trim()) return;
+    if (!listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()) {
+      setShowClaimDetails(true);
+      setClaimError('Add your name, contact, listing name, and a short description to continue.');
+      return;
+    }
     const result = await onSubmit({url: link, bid: amount, category: listingCategory});
     setClaimed(Boolean(result?.ok));
     setClaimError(result?.ok ? '' : result?.error || 'We could not submit this listing.');
@@ -178,30 +184,32 @@ function Board({listings: boardListings, recentBids: boardActivity, amount, setA
       <div className="rank-preview">Estimated position: <strong>#{position || 1}</strong></div>
 
       <div id="claim-form" className={`claim-form ${claimed ? 'is-success' : ''}`}>
-        <label className="claim-field">
-          <AppIcon icon={Globe02Icon} size={24}/>
-          <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false);setClaimError('')}} placeholder="Your product URL or @handle"/>
-        </label>
-        <label className="claim-field claim-select-field">
-          <select aria-label="Listing category" value={listingCategory} onChange={e=>{setListingCategory(e.target.value);setClaimed(false);setClaimError('')}}>
-            <option value="">Choose a category</option>
-            <option value="Food">Food & drink</option>
-            <option value="Event">Event</option>
-            <option value="Service">Service</option>
-            <option value="Creator">Creator</option>
-            <option value="Business">Business</option>
-            <option value="Community">Community</option>
-            <option value="Discovery">Discovery</option>
-          </select>
-          <AppIcon icon={ArrowUp01Icon} size={22}/>
-        </label>
-        <div className="claim-details">
+        <div className="claim-primary">
+          <label className="claim-field">
+            <AppIcon icon={Globe02Icon} size={22}/>
+            <input aria-label="Listing link" value={link} onChange={e=>{setLink(e.target.value);setClaimed(false);setClaimError('')}} placeholder="Your product URL or @handle"/>
+          </label>
+          <label className="claim-field claim-select-field">
+            <select aria-label="Listing category" value={listingCategory} onChange={e=>{setListingCategory(e.target.value);setClaimed(false);setClaimError('')}}>
+              <option value="">Choose a category</option>
+              <option value="Food">Food & drink</option>
+              <option value="Event">Event</option>
+              <option value="Service">Service</option>
+              <option value="Creator">Creator</option>
+              <option value="Business">Business</option>
+              <option value="Community">Community</option>
+              <option value="Discovery">Discovery</option>
+            </select>
+            <AppIcon icon={ArrowUp01Icon} size={20}/>
+          </label>
+          <button className="claim-submit" onClick={submitClaim} disabled={!link.trim() || !listingCategory}>{claimed ? 'Request received ✓' : 'Submit for review'}</button>
+        </div>
+        <div className={`claim-details ${showClaimDetails ? 'is-visible' : ''}`}>
           <input aria-label="Listing name" value={listingName} onChange={e=>{setListingName(e.target.value);setClaimed(false)}} placeholder="Listing name" />
           <input aria-label="Your name" value={ownerName} onChange={e=>{setOwnerName(e.target.value);setClaimed(false)}} placeholder="Your name" />
           <input aria-label="Email or WhatsApp number" value={ownerContact} onChange={e=>{setOwnerContact(e.target.value);setClaimed(false)}} placeholder="Email or WhatsApp number" />
           <textarea aria-label="Short description" value={listingDescription} onChange={e=>{setListingDescription(e.target.value);setClaimed(false)}} placeholder="Short description of what people will find…" rows="2" />
         </div>
-        <button className="claim-submit" onClick={submitClaim} disabled={!link.trim() || !listingCategory || !listingName.trim() || !listingDescription.trim() || !ownerName.trim() || !ownerContact.trim()}>{claimed ? 'Request received ✓' : 'Submit for review'}</button>
       </div>
       <p className={`microcopy ${claimError ? 'claim-error' : ''}`}>{claimError || (claimed ? (dataMode === 'supabase' ? 'Submitted for review. It will appear after approval.' : 'Saved to this browser. Connect Supabase to enable moderation.') : 'Already listed? Use the same link to move higher — you only pay the difference.')}</p>
     </section>
