@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   try {
     const body = await readBody(req);
     const {url, name, category, description, owner_name, owner_contact, amount} = body;
-    if (!url || !name || !category || !description || !owner_name || !owner_contact || !Number.isInteger(amount) || amount < 49) return json(res, 400, {error: 'Complete the listing details and use a bid of at least ₹49.'});
+    if (!url || !name || !category || !description || !owner_name || !owner_contact || !Number.isInteger(amount) || amount < 29) return json(res, 400, {error: 'Complete the listing details and use a bid of at least ₹29.'});
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) throw new Error('Razorpay server environment is not configured.');
     const supabase = adminClient();
     const {data: listing, error: listingError} = await supabase.from('listings').insert({url: url.trim(), name: name.trim(), category, description: description.trim(), owner_name: owner_name.trim(), owner_contact: owner_contact.trim(), current_bid: amount, status: 'pending'}).select('id').single();
